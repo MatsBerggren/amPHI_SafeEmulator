@@ -8,8 +8,8 @@ import lombok.Data;
 public class Symbol {
     private String id;
     private Integer mapitemtype;
-    private State state;
-    private double heading;
+    private String state;
+    private Integer heading;
     private String description;
     private String assignmentId;
     private Position position;

@@ -12,7 +12,7 @@ public class Assignment {
     private String assignment_number;
     private CloseReason close_reason;
     private String created;
-    private String distance;
+    private Integer distance;
     private String eta;
     private String is_closed;
     private String is_destination_alarm_sent;

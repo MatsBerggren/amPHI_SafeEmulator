@@ -1,5 +1,7 @@
 package com.dedalus.amphi_integration.model.amphi;
 
+import com.google.gson.annotations.SerializedName;
+
 import lombok.Builder;
 import lombok.Data;
 import nonapi.io.github.classgraph.json.Id;
@@ -7,9 +9,11 @@ import nonapi.io.github.classgraph.json.Id;
 @Data
 @Builder
 public class StateEntry {
-    private Integer distance;
     @Id
-    private Integer from_id;
+    @SerializedName("to_id")
+    private String id;
+    @SerializedName("from_id")
+    private String fromId;
+    private Integer distance;
     private String time;
-    private Integer to_id;
 }

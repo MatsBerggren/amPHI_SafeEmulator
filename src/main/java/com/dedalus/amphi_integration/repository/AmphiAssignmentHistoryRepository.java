@@ -6,10 +6,11 @@ import java.util.Optional;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
-import com.dedalus.amphi_integration.model.amphi.Assignment;
+import com.dedalus.amphi_integration.model.AssignmentHistory;
 
 @Repository
-public interface AmphiAssignmentRepository extends MongoRepository<Assignment, String> {
+public interface AmphiAssignmentHistoryRepository extends MongoRepository<AssignmentHistory, String> {
     void deleteByCreatedBefore(LocalDate date);
-    Optional<Assignment> findFirstByOrderByCreatedDesc();
+
+    Optional<AssignmentHistory> findFirstByOrderByCreatedDesc();
 }

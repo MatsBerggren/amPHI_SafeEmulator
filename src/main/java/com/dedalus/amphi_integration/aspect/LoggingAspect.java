@@ -1,23 +1,30 @@
 package com.dedalus.amphi_integration.aspect;
 
 import org.aspectj.lang.JoinPoint;
+import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
 import org.springframework.stereotype.Component;
 
 @Aspect
 @Component
 public class LoggingAspect {
-
-    @Before("execution(* com.dedalus.amphi_integration.controller.AmphiController.*(..))")
-    public void logBefore(JoinPoint joinPoint) {
-        System.out.println("Call to: " + joinPoint.getSignature().toShortString());
-        Object[] args = joinPoint.getArgs();
-        if (args != null && args.length > 0) {
-            System.out.println("Arguments: ");
-            for (Object arg : args) {
-                System.out.println(" - " + arg);
-            }
-        }
+    /**
+     * Logs the return value of any method in EvamController
+     * @param joinPoint the joinpoint of the method
+     * @param returnValue the return value of the method
+     */
+    @AfterReturning(pointcut = "execution(* com.dedalus.amphi_integration.controller.EvamController.*(..))", returning = "returnValue")
+    public void logAfterEvamReturning(JoinPoint joinPoint, Object returnValue) {
+        System.out.println("Method " + joinPoint.getSignature().toShortString() + " has returned " + returnValue);
+    }
+    
+    /**
+     * Logs the return value of any method in AmphiController
+     * @param joinPoint the joinpoint of the method
+     * @param returnValue the return value of the method
+     */
+    @AfterReturning(pointcut = "execution(* com.dedalus.amphi_integration.controller.AmphiController.*(..))", returning = "returnValue")
+    public void logAfterAmphiReturning(JoinPoint joinPoint, Object returnValue) {
+        System.out.println("Method " + joinPoint.getSignature().toShortString() + " has returned " + returnValue);
     }
 }

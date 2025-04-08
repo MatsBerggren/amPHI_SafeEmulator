@@ -13,19 +13,40 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 @Service
+/**
+ * This class implements the EvamTripLocationHistoryService interface for managing trip location
+ * history.
+ */
 public class EvamTripHistoryLocationServiceImpl implements EvamTripLocationHistoryService {
 
     @Autowired
     EvamTripLocationHistoryRepository evamTripLocationHistoryRepository;
 
-    @Override
-    public TripLocationHistory updateTripLocationHistory(EvamTripLocationHistoryRequestDTO evamTripLocationHistoryRequestDTO) {
+    private Gson gson;
 
+// This code snippet is a constructor for the `EvamTripHistoryLocationServiceImpl` class in Java. It
+// initializes a Gson object (`gson`) with specific configurations for JSON serialization and
+// deserialization.
+    public EvamTripHistoryLocationServiceImpl() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer());
-        Gson gson = gsonBuilder.setPrettyPrinting().disableHtmlEscaping().create();
+        this.gson = gsonBuilder.setPrettyPrinting().disableHtmlEscaping().create();
+    }
 
-        TripLocationHistory tripLocationHistory = gson.fromJson(evamTripLocationHistoryRequestDTO.getTripLocationHistory(), TripLocationHistory.class);
+/**
+ * The function updates a trip location history record in a database based on the provided DTO.
+ * 
+ * @param evamTripLocationHistoryRequestDTO EvamTripLocationHistoryRequestDTO is a data transfer object
+ * that contains information related to trip location history. It is used as a parameter in the
+ * updateTripLocationHistory method to update the trip location history record in the database.
+ * @return The method `updateTripLocationHistory` is returning an object of type `TripLocationHistory`.
+ */
+    @Override
+    public TripLocationHistory updateTripLocationHistory(
+            EvamTripLocationHistoryRequestDTO evamTripLocationHistoryRequestDTO) {
+
+        TripLocationHistory tripLocationHistory = gson
+                .fromJson(evamTripLocationHistoryRequestDTO.getTripLocationHistory(), TripLocationHistory.class);
         evamTripLocationHistoryRepository.deleteById("1");
 
         tripLocationHistory.setId("1");
@@ -34,15 +55,31 @@ public class EvamTripHistoryLocationServiceImpl implements EvamTripLocationHisto
         return tripLocationHistory;
     }
 
+/**
+ * This function retrieves a TripLocationHistory object by its ID from a repository and throws a
+ * RuntimeException if no object is found.
+ * 
+ * @param id The `id` parameter is a unique identifier used to retrieve a specific
+ * `TripLocationHistory` object from the repository.
+ * @return The method is returning a TripLocationHistory object with the specified id. If no
+ * TripLocationHistory is found for the given id, it will throw a RuntimeException with a message
+ * indicating that no TripLocationHistory was found for that id.
+ */
     @Override
     public TripLocationHistory getById(String id) {
         return evamTripLocationHistoryRepository.findById(id).orElseThrow(
                 () -> new RuntimeException("No TripLocationHistory found for id: %s".formatted(id)));
     }
 
+/**
+ * The function returns all trip location history records from the repository.
+ * 
+ * @return A List of TripLocationHistory objects is being returned.
+ */
     @Override
     public List<TripLocationHistory> getAll() {
         return evamTripLocationHistoryRepository.findAll();
     }
 
 }
+

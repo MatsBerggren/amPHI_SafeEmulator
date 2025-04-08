@@ -9,12 +9,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.dedalus.amphi_integration.classes.LocalDateTimeSerializer;
 import com.dedalus.amphi_integration.model.amphi.AllowedState;
-import com.dedalus.amphi_integration.model.amphi.Assignment;
 import com.dedalus.amphi_integration.model.amphi.Destination;
 import com.dedalus.amphi_integration.model.amphi.Position;
 import com.dedalus.amphi_integration.model.amphi.State;
@@ -149,22 +149,40 @@ public class AmphiController {
 
         Symbol symbol = Symbol.builder()
                 .assignmentId(operation.amPHIUniqueId)
-                .description(rakelState.getMsisdn())
+                .description(rakelState.getMsisdn() + " " + operation.getCaseInfo())
                 .heading(0)
-                .id(rakelState.getUnitId())
+                .id(operation.amPHIUniqueId)
                 .is_deleted(false)
                 .mapitemtype(0)
                 .position(position)
-                .state(getState(vehicleState.getVehicleStatus()))
+                .state(vehicleState.getVehicleStatus().getName())
                 .unitId(rakelState.getMsisdn())
                 .build();
 
-        return ResponseEntity.ok(new Gson().toJson(symbol));
+        // Create an array of symbols and add the symbol to it
+        Symbol[] symbols = { symbol };
+        
+        System.out.println(new Gson().toJson(symbols));
+        return ResponseEntity.ok(new Gson().toJson(symbols));
         //return ResponseEntity.ok(new Gson().toJson(new Symbol[1]));
     }
 
-    @PostMapping(value = "/symbols/", consumes = "application/json", produces = "application/json")
-    public ResponseEntity<String> postSymbols(@RequestBody Symbol bean) {
+    /**
+     * Endpoint for updating symbols.
+     * <p>
+     * This endpoint is called when Amphi wants to update the state of a symbol on the map.
+     * The body of the request should contain a JSON array of Symbol objects.
+     * The response will be "ok" if the symbols were successfully updated, or
+     * "Service unavailable" if the service has exceeded the allowed time since last call.
+     * <p>
+     * The service will return a 200 OK response if the symbols were successfully updated,
+     * or a 503 Service Unavailable response if the service has exceeded the allowed time
+     * since last call.
+     */
+    @PutMapping(value = "/symbols/", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<String> postSymbols(@RequestBody Symbol[] symbols) {
+        System.out.println(new Gson().toJson(symbols));
+        
         if (timeExceeded) {
             return new ResponseEntity<>("Service unavailable", HttpStatus.SERVICE_UNAVAILABLE);
         }

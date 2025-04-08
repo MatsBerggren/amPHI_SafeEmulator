@@ -18,6 +18,9 @@ public class EvamVehicleStatusServiceImpl implements EvamVehicleStatusService {
     private final Gson gson;
 
     public EvamVehicleStatusServiceImpl(EvamVehicleStatusRepository evamVehicleStatusRepository) {
+        if (evamVehicleStatusRepository == null) {
+            throw new NullPointerException("evamVehicleStatusRepository cannot be null");
+        }
         this.evamVehicleStatusRepository = evamVehicleStatusRepository;
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
@@ -28,19 +31,15 @@ public class EvamVehicleStatusServiceImpl implements EvamVehicleStatusService {
 
     @Override
     public VehicleStatus[] updateVehicleStatus(EvamVehicleStatusRequestDTO evamVehicleStatusRequestDTO) {
-
-        VehicleStatus[] vehicleStatuses = gson.fromJson(evamVehicleStatusRequestDTO.getVehicleStatus(),VehicleStatus[].class);
+        List<VehicleStatus> vehicleStatuses = List.of(gson.fromJson(evamVehicleStatusRequestDTO.getVehicleStatus(), VehicleStatus[].class));
         evamVehicleStatusRepository.deleteAll();
 
-        for (int i = 0; i < vehicleStatuses.length; i++) {
-            VehicleStatus vehicleStatus = vehicleStatuses[i];
-            String id = String.valueOf(i + 1);
-
-            vehicleStatus.setId(id);
-            evamVehicleStatusRepository.save(vehicleStatus);
+        for (int i = 0; i < vehicleStatuses.size(); i++) {
+            vehicleStatuses.get(i).setId(String.valueOf(i + 1));
         }
 
-        return vehicleStatuses;
+        evamVehicleStatusRepository.saveAll(vehicleStatuses);
+        return vehicleStatuses.toArray(new VehicleStatus[0]);
     }
 
     @Override

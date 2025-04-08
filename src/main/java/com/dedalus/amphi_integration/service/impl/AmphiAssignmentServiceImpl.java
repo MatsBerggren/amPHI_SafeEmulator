@@ -1,13 +1,20 @@
 package com.dedalus.amphi_integration.service.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.StringJoiner;
+import java.lang.reflect.Field;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.dedalus.amphi_integration.classes.DateFix;
+import com.dedalus.amphi_integration.model.AssignmentHistory;
+import com.dedalus.amphi_integration.model.OperationDistance;
 import com.dedalus.amphi_integration.model.amphi.AccessRoad;
 import com.dedalus.amphi_integration.model.amphi.AllowedState;
 import com.dedalus.amphi_integration.model.amphi.Assignment;
@@ -29,8 +36,10 @@ import com.dedalus.amphi_integration.model.evam.HospitalLocation;
 import com.dedalus.amphi_integration.model.evam.Operation;
 import com.dedalus.amphi_integration.model.evam.OperationState;
 import com.dedalus.amphi_integration.model.evam.VehicleStatus;
-import com.dedalus.amphi_integration.repository.AmphiAssignmentRepository;
+import com.dedalus.amphi_integration.repository.AmphiAssignmentHistoryRepository;
 import com.dedalus.amphi_integration.repository.AmphiDestinationRepository;
+import com.dedalus.amphi_integration.repository.OperationDistanceRepository;
+import com.dedalus.amphi_integration.service.AmphiAssignmentHistoryService;
 import com.dedalus.amphi_integration.service.AmphiAssignmentService;
 import com.dedalus.amphi_integration.service.AmphiStateEntryService;
 import com.dedalus.amphi_integration.service.EvamOperationService;
@@ -49,9 +58,13 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
     @Autowired
     EvamVehicleStatusService evamVehicleStatusService;
     @Autowired
-    AmphiAssignmentRepository amphiAssignmentRepository;
+    AmphiAssignmentHistoryRepository amphiAssignmentHistoryRepository;
     @Autowired
     AmphiDestinationRepository amphiDestinationRepository;
+    @Autowired
+    AmphiAssignmentHistoryService amphiAssignmentHistoryService;
+    @Autowired
+    OperationDistanceRepository operationDistanceRepository;
 
     @Override
     public Assignment[] getAllAssignments() {
@@ -61,15 +74,21 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
         } catch (Exception e) {
             return null;
         }
+        String OperationID = operation.callCenterId + ":" + operation.caseFolderId + ":" + operation.operationID;
+        Optional<OperationDistance> operationDistance = operationDistanceRepository.findFirstByOperationIDOrderByTimestampDesc(OperationID);
+        Integer distans = 0;
+        if (!operationDistance.isEmpty() && operationDistance.get().getAssignmentDistance() != null) {
+            distans = operationDistance.get().getAssignmentDistance().intValue();
+        }
         Assignment[] assignments = new Assignment[1];
         Assignment assignment = Assignment.builder()
             .assignment_number(operation.getFullId())
             .close_reason(CloseReason.builder()
                 .comment("")
                 .reason("").build())
-            .created(DateFix.dateFixShort(operation.getCreatedTime()))
-            .received(DateFix.dateFixShort(operation.getSendTime()))
-            .accepted(DateFix.dateFixShort(operation.getAcceptedTime()))
+            .created(DateFix.dateFixLong(operation.getCreatedTime()))
+            .received(DateFix.dateFixLong(operation.getSendTime()))
+            .accepted(DateFix.dateFixLong(operation.getAcceptedTime()))
             .rowid(operation.getAmPHIUniqueId())
             .is_closed(Boolean.toString(operation.operationState == OperationState.AVAILABLE))
             .is_selected(operation.operationState == OperationState.ACTIVE ? "1" : "0")
@@ -78,7 +97,7 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
             .eta("2023-10-25T14:33:00Z")
             .is_head_unit("false")
             .is_routed("false")
-            .distance("0")
+            .distance(distans)
             .methane_report(MethaneReport.builder().build()) // getMethaneReport(operation)
             .rek_report(RekReport.builder().build()) // getRekReport(operation)
             .position(null)
@@ -91,12 +110,34 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
             .state_configuration(getStateConfiguration(operation)).build();
 
         assignments[0] = assignment;
-        deleteOldRecords();
-        amphiAssignmentRepository.save(assignment);
+
+        // Save the assignment history
+        Optional<AssignmentHistory> optionalAssignmentHistory = amphiAssignmentHistoryRepository.findFirstByOrderByCreatedDesc();
+        if (optionalAssignmentHistory.isPresent()) {
+            Assignment existingAssignment = optionalAssignmentHistory.get().getAssignment();
+            if (!existingAssignment.equals(assignment)) {
+                String differences = getDifferences(existingAssignment, assignment);
+                AssignmentHistory assignmentHistory = AssignmentHistory.builder()
+                        .assignment(assignment)
+                        .created(LocalDateTime.now())
+                        .changes(differences)
+                        .build();
+                amphiAssignmentHistoryRepository.save(assignmentHistory);
+            } 
+        } else {
+            AssignmentHistory assignmentHistory = AssignmentHistory.builder()
+                    .assignment(assignment)
+                    .created(LocalDateTime.now())
+                    .changes("New assignment")
+                    .build();
+            amphiAssignmentHistoryRepository.save(assignmentHistory);
+        }
+        deleteOldRecords(7);
 
         return assignments;
 
     }
+
 
     private String getSelectedHospital(Operation operation) {
         HospitalLocation selectedHospitalLocation = getSelectedHospitalLocation(operation);
@@ -178,7 +219,9 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
         String[] nameParts = operation.getPatientName().split(" ");
         String firstName = nameParts.length > 0 ? nameParts[0] : "";
         String lastName = nameParts.length > 1 ? String.join(" ", Arrays.copyOfRange(nameParts, 1, nameParts.length)) : "";
-
+        
+        properties.add(Property.builder().name("creatorsignature").value("EVAM").build());
+        properties.add(Property.builder().name("creatorversion").value("1.1.0").build());
         properties.add(Property.builder().name("created").value(Objects.toString(operation.getCreatedTime().format(dateTimeFormatter), "")).build());
         properties.add(Property.builder().name("sender").value(Objects.toString(operation.getTransmitterCode(), "")).build());
         properties.add(Property.builder().name("central").value(Objects.toString(operation.getCallCenterId(), "")).build());
@@ -225,11 +268,6 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
         return properties;
     }
 
-    public void deleteOldRecords() {
-        // LocalDate today = LocalDate.now();
-        amphiAssignmentRepository.deleteAll(); //.deleteByCreatedBefore(today);
-    }
-
     private State getState(VehicleStatus selectedVehicleStatus) {
         VehicleStatus vehicleStatus = evamVehicleStatusService.getByName(selectedVehicleStatus.getName());
 
@@ -248,4 +286,42 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
                 .build();
     }
 
+    public void deleteOldRecords(Integer days) {
+        LocalDate today = LocalDate.now();
+        amphiAssignmentHistoryRepository.deleteByCreatedBefore(today.minusDays(days));
+        operationDistanceRepository.deleteByTimestampBefore(today.minusDays(days));
+    }
+
+    public static String getDifferences(Object obj1, Object obj2) {
+        if (obj1 == null || obj2 == null) {
+            throw new IllegalArgumentException("Both objects must be non-null");
+        }
+
+        if (!obj1.getClass().equals(obj2.getClass())) {
+            throw new IllegalArgumentException("Both objects must be of the same type");
+        }
+
+        StringJoiner differences = new StringJoiner(", ");
+        Field[] fields = obj1.getClass().getDeclaredFields();
+
+        for (Field field : fields) {
+            field.setAccessible(true);
+            try {
+                Object value1 = field.get(obj1);
+                Object value2 = field.get(obj2);
+
+                if (value1 == null && value2 == null) {
+                    continue;
+                }
+
+                if (value1 == null || value2 == null || !value1.equals(value2)) {
+                    differences.add(field.getName() + ": " + value1 + " -> " + value2);
+                }
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return differences.toString();
+    }
 }

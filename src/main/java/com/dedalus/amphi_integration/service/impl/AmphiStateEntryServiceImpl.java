@@ -16,20 +16,29 @@ public class AmphiStateEntryServiceImpl implements AmphiStateEntryService {
     @Autowired
     AmphiStateEntryRepository amphiStateEntryRepository;
 
+
     @Override
     public StateEntry updateStateEntry(StateEntry stateEntry) {
-        Optional<StateEntry> existingStateEntry = amphiStateEntryRepository.findById(stateEntry.getFrom_id().toString());
+        Optional<StateEntry> existingStateEntry = amphiStateEntryRepository.findById(stateEntry.getId());
 
         if (existingStateEntry.isEmpty()) {
-            return amphiStateEntryRepository.save(stateEntry);
+            return saveNewStateEntry(stateEntry);
         } else {
-            existingStateEntry.get().setDistance(stateEntry.getDistance());
-            existingStateEntry.get().setFrom_id(stateEntry.getFrom_id());
-            existingStateEntry.get().setTime(stateEntry.getTime());
-            existingStateEntry.get().setTo_id(stateEntry.getTo_id());
-
-            return amphiStateEntryRepository.save(existingStateEntry.get());
+            return updateExistingStateEntry(existingStateEntry.get(), stateEntry);
         }
+    }
+
+    private StateEntry saveNewStateEntry(StateEntry stateEntry) {
+        return amphiStateEntryRepository.save(stateEntry);
+    }
+
+    private StateEntry updateExistingStateEntry(StateEntry existingStateEntry, StateEntry newStateEntry) {
+        existingStateEntry.setDistance(newStateEntry.getDistance());
+        existingStateEntry.setFromId(newStateEntry.getFromId());
+        existingStateEntry.setTime(newStateEntry.getTime());
+        existingStateEntry.setId(newStateEntry.getId());
+
+        return amphiStateEntryRepository.save(existingStateEntry);
     }
 
     @Override

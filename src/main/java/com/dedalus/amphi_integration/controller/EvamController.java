@@ -28,6 +28,7 @@ import com.dedalus.amphi_integration.dto.EvamVehicleStatusRequestDTO;
 import com.dedalus.amphi_integration.model.amphi.Destination;
 import com.dedalus.amphi_integration.model.amphi.MethaneReport;
 import com.dedalus.amphi_integration.model.amphi.Position;
+import com.dedalus.amphi_integration.model.amphi.Symbol;
 import com.dedalus.amphi_integration.model.amphi.Ward;
 import com.dedalus.amphi_integration.model.evam.HospitalLocation;
 import com.dedalus.amphi_integration.model.evam.Operation;
@@ -37,6 +38,7 @@ import com.dedalus.amphi_integration.model.evam.TripLocationHistory;
 import com.dedalus.amphi_integration.model.evam.VehicleState;
 import com.dedalus.amphi_integration.model.evam.VehicleStatus;
 import com.dedalus.amphi_integration.service.AmphiDestinationService;
+import com.dedalus.amphi_integration.service.AmphiSymbolService;
 import com.dedalus.amphi_integration.service.EvamMethaneReportService;
 import com.dedalus.amphi_integration.service.EvamOperationListService;
 import com.dedalus.amphi_integration.service.EvamOperationService;
@@ -86,6 +88,8 @@ public class EvamController {
     EvamMethaneReportService evamMethaneReportService;
     @Autowired
     AmphiDestinationService amphiDestinationService;
+    @Autowired
+    AmphiSymbolService amphiSymbolService;
 
     @GetMapping
     public Operation getById(@RequestParam String operationId) {
@@ -137,6 +141,14 @@ public class EvamController {
             }
         }
         return gson.toJson(hospitalLocations);
+    }
+
+    @GetMapping(value = "/symbol", produces = "application/json")
+    public String getSymbol() {
+        lastCallTime = Instant.now();
+        List<Symbol> symbols = amphiSymbolService.getAllSymbols();
+        Gson gson = new Gson();
+        return gson.toJson(symbols);
     }
 
     @PostMapping(value = "/vehiclestate", produces = "application/json")
