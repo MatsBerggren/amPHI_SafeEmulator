@@ -1,0 +1,17 @@
+2026-03-06T08:51:28.428Z [INFO] ----------------------invoke redirect_to_upgrade_agent----------------------
+2026-03-06T08:51:28.429Z [INFO] [Tool.invoke]({name: redirect_to_upgrade_agent, input: {
+  "originalPrompt": "upgrade java runtime to the LTS version Java 21",
+  "projectPath": "c:\\Temp\\Source\\amPHI_SafeEmulator"
+}}).
+2026-03-06T08:51:28.429Z [INFO] [Tool.invoke] do invoke.
+2026-03-06T08:51:28.430Z [INFO] [RedirectToUpgradeAgentTool] Redirecting to custom agent "modernize-java-upgrade" with prompt: upgrade java runtime to the LTS version Java 21
+2026-03-06T08:51:28.484Z [INFO] [RedirectToUpgradeAgentTool] Redirected to custom agent "modernize-java-upgrade". User MUST switch to the new agent to continue.
+2026-03-06T08:51:28.485Z [INFO] [Tool.invoke]({result: {
+  "message": "The upgrade request has been redirected to the \"modernize-java-upgrade\" agent in a new chat session. You MUST! stop processing in this session.",
+  "result": {
+    "redirected": true,
+    "agentName": "modernize-java-upgrade",
+    "prompt": "upgrade java runtime to the LTS version Java 21"
+  }
+}}).
+2026-03-06T08:51:28.486Z [INFO] ----------------------invoked redirect_to_upgrade_agent----------------------
