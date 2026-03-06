@@ -6,16 +6,16 @@ import lombok.Data;
 @Data
 @Builder
 public class ExtraResources {
-    public Integer ambulances;
-    public Integer chemical_suit;
-    public Integer commander_unit;
-    public Integer doctor_on_duty;
-    public Integer emergency_wagon;
-    public Integer helicopter;
-    public Integer medical_team;
-    public Integer medical_transport;
-    public Integer PAM;
-    public Integer sanitation_wagon;
-    public Integer transport_ambulance;
-    public Integer units_total;
+    private Integer ambulances;
+    private Integer chemical_suit;
+    private Integer commander_unit;
+    private Integer doctor_on_duty;
+    private Integer emergency_wagon;
+    private Integer helicopter;
+    private Integer medical_team;
+    private Integer medical_transport;
+    private Integer PAM;
+    private Integer sanitation_wagon;
+    private Integer transport_ambulance;
+    private Integer units_total;
 }

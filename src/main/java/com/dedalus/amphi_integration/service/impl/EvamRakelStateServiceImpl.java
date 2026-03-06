@@ -1,44 +1,44 @@
 package com.dedalus.amphi_integration.service.impl;
 
 import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import com.google.gson.Gson;
-import com.dedalus.amphi_integration.dto.EvamRakelStateRequestDTO;
 import com.dedalus.amphi_integration.model.evam.RakelState;
 import com.dedalus.amphi_integration.repository.EvamRakelStateRepository;
-import com.dedalus.amphi_integration.service.EvamRakelStateService;
 
 @Service
-public class EvamRakelStateServiceImpl implements EvamRakelStateService {
+public class EvamRakelStateServiceImpl {
 
     @Autowired
     EvamRakelStateRepository evamRakelStateRepository;
+    @Autowired
+    Gson gson;
 
-    @Override
-    public RakelState updateRakelState(EvamRakelStateRequestDTO evamRakelStateRequestDTO) {
-        RakelState rakelState = new Gson().fromJson(evamRakelStateRequestDTO.getRakelState(), RakelState.class);
-        
+    public RakelState updateRakelState(String json) {
+        RakelState rakelState = gson.fromJson(json, RakelState.class);
+
         Optional<RakelState> existingRakelState = evamRakelStateRepository.findById("1");
-        if(existingRakelState.isEmpty()) {
+        if (existingRakelState.isEmpty()) {
             rakelState.setId("1");
             rakelState.setUnitId("1");
             return evamRakelStateRepository.save(rakelState);
         } else {
-            if(rakelState.getMsisdn().equals("0000567")) {
-                existingRakelState.get().setMsisdn("3393090");    
-            } else {
-                existingRakelState.get().setMsisdn(rakelState.getMsisdn());
+            RakelState storedRakelState = existingRakelState.get();
+            String incomingMsisdn = rakelState.getMsisdn();
+
+            if ("0000567".equals(incomingMsisdn)) {
+                storedRakelState.setMsisdn("3393090");
+            } else if (incomingMsisdn != null) {
+                storedRakelState.setMsisdn(incomingMsisdn);
             }
-            existingRakelState.get().setIssi(rakelState.getIssi());
-            existingRakelState.get().setGssi(rakelState.getGssi());
-            return evamRakelStateRepository.save(existingRakelState.get());
+
+            storedRakelState.setIssi(rakelState.getIssi());
+            storedRakelState.setGssi(rakelState.getGssi());
+            return evamRakelStateRepository.save(storedRakelState);
         }
     }
 
-    @Override
     public RakelState getById(String id) {
         return evamRakelStateRepository.findById(id).orElseThrow(
             () -> new RuntimeException("No RakelState found for id: %s".formatted(id)));

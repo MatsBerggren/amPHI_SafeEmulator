@@ -1,26 +1,26 @@
 package com.dedalus.amphi_integration.service.impl;
 
-import com.dedalus.amphi_integration.model.amphi.Assignment;
-import com.dedalus.amphi_integration.model.amphi.Property;
-import com.dedalus.amphi_integration.model.amphi.State;
-import com.dedalus.amphi_integration.model.evam.Operation;
-import com.dedalus.amphi_integration.model.evam.VehicleStatus;
-import com.dedalus.amphi_integration.repository.AmphiAssignmentHistoryRepository;
-import com.dedalus.amphi_integration.repository.AmphiDestinationRepository;
-import com.dedalus.amphi_integration.repository.OperationDistanceRepository;
-import com.dedalus.amphi_integration.service.*;
+import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDate;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import com.dedalus.amphi_integration.repository.AmphiAssignmentHistoryRepository;
+import com.dedalus.amphi_integration.repository.AmphiDestinationRepository;
+import com.dedalus.amphi_integration.repository.OperationDistanceRepository;
+import com.dedalus.amphi_integration.service.EvamOperationService;
+import com.dedalus.amphi_integration.service.EvamVehicleStateService;
 
 /**
  * Unit tests for AmphiAssignmentServiceImpl.
@@ -36,10 +36,10 @@ class AmphiAssignmentServiceImplTest {
     private EvamVehicleStateService evamVehicleStateService;
 
     @Mock
-    private AmphiStateEntryService amphiStateEntryService;
+    private AmphiStateEntryServiceImpl amphiStateEntryService;
 
     @Mock
-    private EvamVehicleStatusService evamVehicleStatusService;
+    private EvamVehicleStatusServiceImpl evamVehicleStatusService;
 
     @Mock
     private AmphiAssignmentHistoryRepository amphiAssignmentHistoryRepository;
@@ -48,7 +48,7 @@ class AmphiAssignmentServiceImplTest {
     private AmphiDestinationRepository amphiDestinationRepository;
 
     @Mock
-    private AmphiAssignmentHistoryService amphiAssignmentHistoryService;
+    private AmphiAssignmentHistoryServiceImpl amphiAssignmentHistoryService;
 
     @Mock
     private OperationDistanceRepository operationDistanceRepository;

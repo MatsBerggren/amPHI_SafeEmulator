@@ -1,0 +1,12 @@
+{
+  "1" : {
+    "id" : "1",
+    "name" : null,
+    "event" : null,
+    "successorName" : null,
+    "isStartStatus" : null,
+    "isEndStatus" : null,
+    "categoryType" : null,
+    "categoryName" : null
+  }
+}

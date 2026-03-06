@@ -1,4 +1,6 @@
-package com.dedalus.amphi_integration.classes;
+package com.dedalus.amphi_integration.util;
+
+import com.dedalus.amphi_integration.util.DateFix;
 
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;

@@ -6,11 +6,11 @@ import lombok.Data;
 @Data
 @Builder
 public class DestinationSiteLocation {
-        public Double latitude;
-        public Double longitude;
-        public String street;
-        public String locality;
-        public String municipality;
-        public String routeDirections;
-        public String pickupTime;
+        private Double latitude;
+        private Double longitude;
+        private String street;
+        private String locality;
+        private String municipality;
+        private String routeDirections;
+        private String pickupTime;
 }

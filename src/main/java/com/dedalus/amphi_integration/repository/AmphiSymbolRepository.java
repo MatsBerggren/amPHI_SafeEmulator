@@ -1,10 +1,16 @@
 package com.dedalus.amphi_integration.repository;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import com.dedalus.amphi_integration.model.amphi.Symbol;
 
+import jakarta.annotation.PostConstruct;
+
 @Repository
-public interface AmphiSymbolRepository extends MongoRepository<Symbol, String> {
+public class AmphiSymbolRepository extends JsonFileRepository<Symbol> {
+
+    @PostConstruct
+    public void init() {
+        initialize(Symbol.class);
+    }
 }

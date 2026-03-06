@@ -1,6 +1,5 @@
 package com.dedalus.amphi_integration.controller;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -13,7 +12,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.dedalus.amphi_integration.classes.LocalDateTimeSerializer;
 import com.dedalus.amphi_integration.model.amphi.AllowedState;
 import com.dedalus.amphi_integration.model.amphi.Destination;
 import com.dedalus.amphi_integration.model.amphi.Position;
@@ -27,16 +25,17 @@ import com.dedalus.amphi_integration.model.evam.RakelState;
 import com.dedalus.amphi_integration.model.evam.VehicleState;
 import com.dedalus.amphi_integration.model.evam.VehicleStatus;
 import com.dedalus.amphi_integration.service.AmphiAssignmentService;
-import com.dedalus.amphi_integration.service.AmphiDestinationService;
 import com.dedalus.amphi_integration.service.EvamOperationService;
-import com.dedalus.amphi_integration.service.EvamRakelStateService;
 import com.dedalus.amphi_integration.service.EvamVehicleStateService;
-import com.dedalus.amphi_integration.service.EvamVehicleStatusService;
+import com.dedalus.amphi_integration.service.impl.AmphiDestinationServiceImpl;
+import com.dedalus.amphi_integration.service.impl.EvamRakelStateServiceImpl;
+import com.dedalus.amphi_integration.service.impl.EvamVehicleStatusServiceImpl;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @CrossOrigin
 @RequestMapping("/api/rest")
@@ -55,13 +54,15 @@ public class AmphiController {
     @Autowired
     private EvamVehicleStateService evamVehicleStateService;
     @Autowired
-    private EvamRakelStateService evamRakelStateService;
+    private EvamRakelStateServiceImpl evamRakelStateService;
     @Autowired
-    private AmphiDestinationService amphiDestinationService;
+    private AmphiDestinationServiceImpl amphiDestinationService;
     @Autowired
     private AmphiAssignmentService amphiAssignmentService;
     @Autowired
-    private EvamVehicleStatusService evamVehicleStatusService;
+    private EvamVehicleStatusServiceImpl evamVehicleStatusService;
+    @Autowired
+    private Gson gson;
 
     @GetMapping(value = "/apiversion/")
     public ResponseEntity<String> getCsamInterfaceVersion() {
@@ -96,7 +97,7 @@ public class AmphiController {
                 .state(getState(vehicleState.getVehicleStatus()))
                 .build();
 
-        return ResponseEntity.ok(new Gson().toJson(unit));
+        return ResponseEntity.ok(gson.toJson(unit));
     }
 
     @GetMapping(value = "/destinations/")
@@ -106,10 +107,9 @@ public class AmphiController {
         }
 
         Operation operation = evamOperationService.getById("1");
-        Gson gson = new Gson();
 
         ArrayList<Destination> destinations = new ArrayList<>();
-        for (HospitalLocation hospitalLocation : operation.availableHospitalLocations) {
+        for (HospitalLocation hospitalLocation : operation.getAvailableHospitalLocations()) {
             Destination destination =  Destination.builder()
                     .abbreviation(hospitalLocation.getId().toString())
                     .name(hospitalLocation.getName())
@@ -128,7 +128,7 @@ public class AmphiController {
 
     @PostMapping(value = "/destinations/", consumes = {"application/json"}, produces = "application/json")
     public Destination[] postDestinations(@RequestBody String json) {
-        return amphiDestinationService.updateDestinations(new Gson().fromJson(json, Destination[].class));
+        return amphiDestinationService.updateDestinations(gson.fromJson(json, Destination[].class));
     }
 
     @GetMapping(value = "/symbols/")
@@ -148,10 +148,10 @@ public class AmphiController {
                 .build();
 
         Symbol symbol = Symbol.builder()
-                .assignmentId(operation.amPHIUniqueId)
+                .assignmentId(operation.getAmPHIUniqueId())
                 .description(rakelState.getMsisdn() + " " + operation.getCaseInfo())
                 .heading(0)
-                .id(operation.amPHIUniqueId)
+                .id(operation.getAmPHIUniqueId())
                 .is_deleted(false)
                 .mapitemtype(0)
                 .position(position)
@@ -159,29 +159,15 @@ public class AmphiController {
                 .unitId(rakelState.getMsisdn())
                 .build();
 
-        // Create an array of symbols and add the symbol to it
         Symbol[] symbols = { symbol };
         
-        System.out.println(new Gson().toJson(symbols));
-        return ResponseEntity.ok(new Gson().toJson(symbols));
-        //return ResponseEntity.ok(new Gson().toJson(new Symbol[1]));
+        log.debug("GET /symbols/: {}", gson.toJson(symbols));
+        return ResponseEntity.ok(gson.toJson(symbols));
     }
 
-    /**
-     * Endpoint for updating symbols.
-     * <p>
-     * This endpoint is called when Amphi wants to update the state of a symbol on the map.
-     * The body of the request should contain a JSON array of Symbol objects.
-     * The response will be "ok" if the symbols were successfully updated, or
-     * "Service unavailable" if the service has exceeded the allowed time since last call.
-     * <p>
-     * The service will return a 200 OK response if the symbols were successfully updated,
-     * or a 503 Service Unavailable response if the service has exceeded the allowed time
-     * since last call.
-     */
     @PutMapping(value = "/symbols/", consumes = "application/json", produces = "application/json")
     public ResponseEntity<String> postSymbols(@RequestBody Symbol[] symbols) {
-        System.out.println(new Gson().toJson(symbols));
+        log.debug("PUT /symbols/: {}", gson.toJson(symbols));
         
         if (timeExceeded) {
             return new ResponseEntity<>("Service unavailable", HttpStatus.SERVICE_UNAVAILABLE);
@@ -196,9 +182,6 @@ public class AmphiController {
             return new ResponseEntity<>("Service unavailable", HttpStatus.SERVICE_UNAVAILABLE);
         }
 
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeSerializer());
-        Gson gson = gsonBuilder.disableHtmlEscaping().create();
         return ResponseEntity.ok(gson.toJson(amphiAssignmentService.getAllAssignments()));
     }
 

@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @Builder
 public class OperationPriority {
-    public Integer id;
-    public String name;
+    private Integer id;
+    private String name;
 }

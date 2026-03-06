@@ -2,11 +2,10 @@ package com.dedalus.amphi_integration.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.dedalus.amphi_integration.classes.DateFix;
-import com.dedalus.amphi_integration.classes.LocalDateTimeDeserializer;
-import com.dedalus.amphi_integration.dto.EvamVehicleStateRequestDTO;
+import com.dedalus.amphi_integration.util.DateFix;
 import com.dedalus.amphi_integration.model.OperationDistance;
 import com.dedalus.amphi_integration.model.amphi.StateEntry;
 import com.dedalus.amphi_integration.model.evam.Operation;
@@ -17,11 +16,10 @@ import com.dedalus.amphi_integration.repository.EvamOperationRepository;
 import com.dedalus.amphi_integration.repository.EvamVehicleStateRepository;
 import com.dedalus.amphi_integration.repository.EvamVehicleStatusRepository;
 import com.dedalus.amphi_integration.repository.OperationDistanceRepository;
-import com.dedalus.amphi_integration.service.AmphiStateEntryService;
 import com.dedalus.amphi_integration.service.EvamVehicleStateService;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
+@Slf4j
 @Service
 public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
 
@@ -38,28 +36,25 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
     private OperationDistanceRepository operationDistanceRepository;
 
     @Autowired
-    private AmphiStateEntryService amphiStateEntryService;
+    private AmphiStateEntryServiceImpl amphiStateEntryService;
 
     @Autowired
     private EvamOperationRepository evamOperationRepository;
 
-    private final Gson gson = new GsonBuilder()
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
-            .setPrettyPrinting()
-            .disableHtmlEscaping()
-            .create();
+    @Autowired
+    private Gson gson;
 
     @Override
-    public VehicleState updateVehicleState(EvamVehicleStateRequestDTO evamVehicleStateRequestDTO) {
-        VehicleState vehicleState = gson.fromJson(evamVehicleStateRequestDTO.getVehicleState(), VehicleState.class);
+    public VehicleState updateVehicleState(String json) {
+        VehicleState vehicleState = gson.fromJson(json, VehicleState.class);
 
-        System.out.println("START *****************************************************************************");
+        log.debug("Processing vehicle state update");
 
         String lastVehicleStatusId = getPreviousStateId();
-        System.out.println("Previous State ID: " + lastVehicleStatusId);
+        log.debug("Previous State ID: {}", lastVehicleStatusId);
 
         String vehicleStatusId = getVehicleStatusId(vehicleState);
-        System.out.println("Actual State ID: " + vehicleStatusId);
+        log.debug("Actual State ID: {}", vehicleStatusId);
 
         double distance = calculateDistance(vehicleState);
 
@@ -68,12 +63,10 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
         }
 
         if (!lastVehicleStatusId.equals(vehicleStatusId)) {
-            
             Optional<OperationDistance> latestOperationDistanceForPreviousState = operationDistanceRepository
                     .findFirstByOperationIDAndStateIDOrderByTimestampDesc(vehicleState.getActiveCaseFullId(), lastVehicleStatusId);
             double stateEntryDistance = latestOperationDistanceForPreviousState.map(OperationDistance::getStateEntryDistance).orElse(0.0);
-            System.out.println(stateEntryDistance + vehicleState.getActiveCaseFullId() + lastVehicleStatusId);
-            System.out.println(latestOperationDistanceForPreviousState.toString());
+            log.debug("State entry distance: {} for caseId={} previousState={}", stateEntryDistance, vehicleState.getActiveCaseFullId(), lastVehicleStatusId);
             StateEntry stateEntry = StateEntry.builder()
                     .id(vehicleStatusId)
                     .fromId(lastVehicleStatusId)
@@ -81,14 +74,11 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
                     .time(DateFix.dateFixLong(vehicleState.getTimestamp()))
                     .build();
             amphiStateEntryService.updateStateEntry(stateEntry);
-            
             updateOperationState(vehicleStatusId);
         }
 
         evamVehicleStateRepository.deleteById("1");
         vehicleState.setId("1");
-
-        System.out.println("END *****************************************************************************");
 
         return evamVehicleStateRepository.save(vehicleState);
     }

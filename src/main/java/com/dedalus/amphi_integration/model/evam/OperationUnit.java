@@ -9,7 +9,7 @@ public class OperationUnit {
     private String unitId;
     private String status;
     private String role;
-    private OperationUnitSource source;
+    private String source;
     private String eta;
     private String reportedInArea;
 }

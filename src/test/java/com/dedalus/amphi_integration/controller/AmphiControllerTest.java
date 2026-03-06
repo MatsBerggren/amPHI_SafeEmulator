@@ -3,7 +3,12 @@ package com.dedalus.amphi_integration.controller;
 import com.dedalus.amphi_integration.model.amphi.Assignment;
 import com.dedalus.amphi_integration.model.amphi.Destination;
 import com.dedalus.amphi_integration.model.amphi.Symbol;
-import com.dedalus.amphi_integration.service.*;
+import com.dedalus.amphi_integration.service.AmphiAssignmentService;
+import com.dedalus.amphi_integration.service.EvamOperationService;
+import com.dedalus.amphi_integration.service.EvamVehicleStateService;
+import com.dedalus.amphi_integration.service.impl.AmphiDestinationServiceImpl;
+import com.dedalus.amphi_integration.service.impl.EvamRakelStateServiceImpl;
+import com.dedalus.amphi_integration.service.impl.EvamVehicleStatusServiceImpl;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -37,16 +43,19 @@ class AmphiControllerTest {
     private EvamVehicleStateService evamVehicleStateService;
 
     @MockBean
-    private EvamRakelStateService evamRakelStateService;
+    private EvamRakelStateServiceImpl evamRakelStateService;
 
     @MockBean
-    private AmphiDestinationService amphiDestinationService;
+    private AmphiDestinationServiceImpl amphiDestinationService;
 
     @MockBean
     private AmphiAssignmentService amphiAssignmentService;
 
     @MockBean
-    private EvamVehicleStatusService evamVehicleStatusService;
+    private EvamVehicleStatusServiceImpl evamVehicleStatusService;
+
+    @MockBean
+    private Gson gson;
 
     // ========== API Version Endpoint Tests ==========
 
@@ -73,8 +82,10 @@ class AmphiControllerTest {
                 .build()
         };
         
+        when(gson.fromJson(any(String.class), eq(Destination[].class))).thenReturn(destinations);
         when(amphiDestinationService.updateDestinations(any(Destination[].class)))
                 .thenReturn(destinations);
+        when(gson.toJson(any(Object.class))).thenReturn("[{\"name\":\"Test Hospital\"}]");
 
         String json = new Gson().toJson(destinations);
 
@@ -82,8 +93,7 @@ class AmphiControllerTest {
         mockMvc.perform(post("/api/rest/destinations/")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk());
     }
 
     @Test

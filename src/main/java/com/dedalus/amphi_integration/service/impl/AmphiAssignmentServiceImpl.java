@@ -12,7 +12,7 @@ import java.util.StringJoiner;
 import java.lang.reflect.Field;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.dedalus.amphi_integration.classes.DateFix;
+import com.dedalus.amphi_integration.util.DateFix;
 import com.dedalus.amphi_integration.model.AssignmentHistory;
 import com.dedalus.amphi_integration.model.OperationDistance;
 import com.dedalus.amphi_integration.model.amphi.AccessRoad;
@@ -39,12 +39,9 @@ import com.dedalus.amphi_integration.model.evam.VehicleStatus;
 import com.dedalus.amphi_integration.repository.AmphiAssignmentHistoryRepository;
 import com.dedalus.amphi_integration.repository.AmphiDestinationRepository;
 import com.dedalus.amphi_integration.repository.OperationDistanceRepository;
-import com.dedalus.amphi_integration.service.AmphiAssignmentHistoryService;
 import com.dedalus.amphi_integration.service.AmphiAssignmentService;
-import com.dedalus.amphi_integration.service.AmphiStateEntryService;
 import com.dedalus.amphi_integration.service.EvamOperationService;
 import com.dedalus.amphi_integration.service.EvamVehicleStateService;
-import com.dedalus.amphi_integration.service.EvamVehicleStatusService;
 
 @Service
 public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
@@ -54,15 +51,15 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
     @Autowired
     EvamVehicleStateService evamVehicleStateService;
     @Autowired
-    AmphiStateEntryService amphiStateEntryService;
+    AmphiStateEntryServiceImpl amphiStateEntryService;
     @Autowired
-    EvamVehicleStatusService evamVehicleStatusService;
+    EvamVehicleStatusServiceImpl evamVehicleStatusService;
     @Autowired
     AmphiAssignmentHistoryRepository amphiAssignmentHistoryRepository;
     @Autowired
     AmphiDestinationRepository amphiDestinationRepository;
     @Autowired
-    AmphiAssignmentHistoryService amphiAssignmentHistoryService;
+    AmphiAssignmentHistoryServiceImpl amphiAssignmentHistoryService;
     @Autowired
     OperationDistanceRepository operationDistanceRepository;
 
@@ -74,7 +71,7 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
         } catch (Exception e) {
             return null;
         }
-        String OperationID = operation.callCenterId + ":" + operation.caseFolderId + ":" + operation.operationID;
+        String OperationID = operation.getCallCenterId() + ":" + operation.getCaseFolderId() + ":" + operation.getOperationID();
         Optional<OperationDistance> operationDistance = operationDistanceRepository.findFirstByOperationIDOrderByTimestampDesc(OperationID);
         Integer distans = 0;
         if (!operationDistance.isEmpty() && operationDistance.get().getAssignmentDistance() != null) {
@@ -90,8 +87,8 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
             .received(DateFix.dateFixLong(operation.getSendTime()))
             .accepted(DateFix.dateFixLong(operation.getAcceptedTime()))
             .rowid(operation.getAmPHIUniqueId())
-            .is_closed(Boolean.toString(operation.operationState == OperationState.AVAILABLE))
-            .is_selected(operation.operationState == OperationState.ACTIVE ? "1" : "0")
+            .is_closed(Boolean.toString(operation.getOperationState() == OperationState.AVAILABLE))
+            .is_selected(operation.getOperationState() == OperationState.ACTIVE ? "1" : "0")
             .is_destination_alarm_sent("false")
             .selected_destination(getSelectedHospital(operation))
             .eta("2023-10-25T14:33:00Z")
@@ -102,8 +99,8 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
             .rek_report(RekReport.builder().build()) // getRekReport(operation)
             .position(null)
             .to_position(ToPosition.builder()
-                .wgs84_dd_la(operation.destinationSiteLocation.getLatitude())
-                .wgs84_dd_lo(operation.destinationSiteLocation.getLongitude()).build())
+                .wgs84_dd_la(operation.getDestinationSiteLocation().getLatitude())
+                .wgs84_dd_lo(operation.getDestinationSiteLocation().getLongitude()).build())
             .properties(getProperties(operation))
             .state(getState(operation.getVehicleStatus()))
             .state_entries(getStateEntries(operation))

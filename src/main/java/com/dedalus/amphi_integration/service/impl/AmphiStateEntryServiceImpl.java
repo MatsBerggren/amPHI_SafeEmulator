@@ -8,41 +8,30 @@ import org.springframework.stereotype.Service;
 
 import com.dedalus.amphi_integration.model.amphi.StateEntry;
 import com.dedalus.amphi_integration.repository.AmphiStateEntryRepository;
-import com.dedalus.amphi_integration.service.AmphiStateEntryService;
 
 @Service
-public class AmphiStateEntryServiceImpl implements AmphiStateEntryService {
+public class AmphiStateEntryServiceImpl {
 
     @Autowired
     AmphiStateEntryRepository amphiStateEntryRepository;
 
-
-    @Override
     public StateEntry updateStateEntry(StateEntry stateEntry) {
         Optional<StateEntry> existingStateEntry = amphiStateEntryRepository.findById(stateEntry.getId());
 
         if (existingStateEntry.isEmpty()) {
-            return saveNewStateEntry(stateEntry);
+            return amphiStateEntryRepository.save(stateEntry);
         } else {
-            return updateExistingStateEntry(existingStateEntry.get(), stateEntry);
+            StateEntry existing = existingStateEntry.get();
+            existing.setDistance(stateEntry.getDistance());
+            existing.setFromId(stateEntry.getFromId());
+            existing.setTime(stateEntry.getTime());
+            existing.setId(stateEntry.getId());
+            return amphiStateEntryRepository.save(existing);
         }
     }
 
-    private StateEntry saveNewStateEntry(StateEntry stateEntry) {
-        return amphiStateEntryRepository.save(stateEntry);
-    }
-
-    private StateEntry updateExistingStateEntry(StateEntry existingStateEntry, StateEntry newStateEntry) {
-        existingStateEntry.setDistance(newStateEntry.getDistance());
-        existingStateEntry.setFromId(newStateEntry.getFromId());
-        existingStateEntry.setTime(newStateEntry.getTime());
-        existingStateEntry.setId(newStateEntry.getId());
-
-        return amphiStateEntryRepository.save(existingStateEntry);
-    }
-
-    @Override
     public List<StateEntry> getAll() {
         return amphiStateEntryRepository.findAll();
     }
 }
+

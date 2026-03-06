@@ -1,10 +1,16 @@
 package com.dedalus.amphi_integration.repository;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import com.dedalus.amphi_integration.model.amphi.MethaneReport;
 
+import jakarta.annotation.PostConstruct;
+
 @Repository
-public interface EvamMethaneReportRepository extends MongoRepository<MethaneReport, String> {
+public class EvamMethaneReportRepository extends JsonFileRepository<MethaneReport> {
+
+    @PostConstruct
+    public void init() {
+        initialize(MethaneReport.class);
+    }
 }

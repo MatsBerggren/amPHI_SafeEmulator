@@ -1,12 +1,10 @@
 package com.dedalus.amphi_integration.service.impl;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.dedalus.amphi_integration.classes.LocalDateTimeDeserializer;
-import com.dedalus.amphi_integration.dto.EvamOperationRequestDTO;
 import com.dedalus.amphi_integration.model.evam.Operation;
 import com.dedalus.amphi_integration.model.evam.VehicleState;
 import com.dedalus.amphi_integration.repository.AmphiAssignmentRepository;
@@ -17,8 +15,8 @@ import com.dedalus.amphi_integration.repository.EvamTripLocationHistoryRepositor
 import com.dedalus.amphi_integration.repository.EvamVehicleStateRepository;
 import com.dedalus.amphi_integration.service.EvamOperationService;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
+@Slf4j
 @Service
 public class EvamOperationServiceImpl implements EvamOperationService {
 
@@ -34,19 +32,12 @@ public class EvamOperationServiceImpl implements EvamOperationService {
     private EvamMethaneReportRepository evamMethaneRepository;
     @Autowired
     private EvamTripLocationHistoryRepository evamTripLocationHistoryRepository;
-
+    @Autowired
     private Gson gson;
 
-    public EvamOperationServiceImpl() {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer());
-        this.gson = gsonBuilder.setPrettyPrinting().disableHtmlEscaping().create();
-    }
-
     @Override
-    public Operation updateOperation(EvamOperationRequestDTO evamOperationRequestDTO) {
-
-        Operation operation = gson.fromJson(evamOperationRequestDTO.getOperation(), Operation.class);
+    public Operation updateOperation(String json) {
+        Operation operation = gson.fromJson(json, Operation.class);
         Optional<Operation> existingOperation = evamOperationRepository.findById("1");
 
         if (existingOperation.isEmpty() || !operation.getFullId().equals(existingOperation.get().getFullId())) {
@@ -82,5 +73,4 @@ public class EvamOperationServiceImpl implements EvamOperationService {
     public Operation getById(String id) {
         return evamOperationRepository.findById(id).orElseThrow(() -> new RuntimeException("No Operation found for id: %s".formatted(id)));
     }
-
 }

@@ -1,36 +1,26 @@
 package com.dedalus.amphi_integration.service.impl;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.dedalus.amphi_integration.classes.LocalDateTimeDeserializer;
-import com.dedalus.amphi_integration.dto.EvamMethaneReportRequestDTO;
 import com.dedalus.amphi_integration.model.amphi.MethaneReport;
 import com.dedalus.amphi_integration.repository.EvamMethaneReportRepository;
-import com.dedalus.amphi_integration.service.EvamMethaneReportService;
 
+@Slf4j
 @Service
-public class EvamMethaneReportServiceImpl implements EvamMethaneReportService {
+public class EvamMethaneReportServiceImpl {
 
+    @Autowired
+    Gson gson;
     @Autowired
     EvamMethaneReportRepository evamMethaneReportRepository;
 
-    @Override
-    public MethaneReport updateMethaneReport(EvamMethaneReportRequestDTO evamMethaneReportRequestDTO) {
-
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer());
-        Gson gson = gsonBuilder.setPrettyPrinting().disableHtmlEscaping().create();
-
-
-        MethaneReport methaneReport = gson.fromJson(evamMethaneReportRequestDTO.getMethaneReport(), MethaneReport.class);
-
-        System.out.println("JSON: " + evamMethaneReportRequestDTO.getMethaneReport());
-        System.out.println("Objekt: " + methaneReport);
+    public MethaneReport updateMethaneReport(String json) {
+        MethaneReport methaneReport = gson.fromJson(json, MethaneReport.class);
+        log.info("Updating MethaneReport: {}", methaneReport);
 
         Optional<MethaneReport> existingMethaneReport = evamMethaneReportRepository.findById("1");
 
@@ -54,20 +44,17 @@ public class EvamMethaneReportServiceImpl implements EvamMethaneReportService {
             existingMethaneReport.get().setTime_first_departure(methaneReport.getTime_first_departure());
             existingMethaneReport.get().setTypes(methaneReport.getTypes());
             evamMethaneReportRepository.save(existingMethaneReport.get());
-            System.out.println("Methane Report Updated");
+            log.info("Methane Report Updated");
         }
 
         return methaneReport;
     }
 
-    @Override
     public MethaneReport getById(String id) {
-        return evamMethaneReportRepository.findById(id).orElseThrow(() -> new RuntimeException("No TripLocationHistory found for id: %s".formatted(id)));
+        return evamMethaneReportRepository.findById(id).orElseThrow(() -> new RuntimeException("No MethaneReport found for id: %s".formatted(id)));
     }
 
-    @Override
     public List<MethaneReport> getAll() {
         return evamMethaneReportRepository.findAll();
     }
-
 }

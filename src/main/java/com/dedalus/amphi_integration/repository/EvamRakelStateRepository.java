@@ -1,10 +1,16 @@
 package com.dedalus.amphi_integration.repository;
 
-import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import com.dedalus.amphi_integration.model.evam.RakelState;
 
+import jakarta.annotation.PostConstruct;
+
 @Repository
-public interface EvamRakelStateRepository extends MongoRepository<RakelState, String> {
+public class EvamRakelStateRepository extends JsonFileRepository<RakelState> {
+
+    @PostConstruct
+    public void init() {
+        initialize(RakelState.class);
+    }
 }

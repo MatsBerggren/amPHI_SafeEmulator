@@ -7,12 +7,12 @@ import lombok.Data;
 @Builder
 public class DestinationControlPointLocation {
 
-        public Double latitude;
+        private Double latitude;
 
-        public Double longitude;
+        private Double longitude;
 
-        public String name;
+        private String name;
 
-        public String additionalInfo;
+        private String additionalInfo;
 
 }

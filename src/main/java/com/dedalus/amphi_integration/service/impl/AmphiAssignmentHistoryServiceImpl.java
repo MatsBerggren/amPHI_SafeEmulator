@@ -6,17 +6,16 @@ import org.springframework.stereotype.Service;
 
 import com.dedalus.amphi_integration.model.AssignmentHistory;
 import com.dedalus.amphi_integration.repository.AmphiAssignmentHistoryRepository;
-import com.dedalus.amphi_integration.service.AmphiAssignmentHistoryService;
 
 @Service
-public class AmphiAssignmentHistoryServiceImpl implements AmphiAssignmentHistoryService {
+public class AmphiAssignmentHistoryServiceImpl {
 
     @Autowired
     AmphiAssignmentHistoryRepository amphiAssignmentHistoryRepository;
 
-    @Override
     public Optional<AssignmentHistory> getFirstByOrderByCreatedDesc() {
         return amphiAssignmentHistoryRepository.findFirstByOrderByCreatedDesc();
     }
 
 }
+
