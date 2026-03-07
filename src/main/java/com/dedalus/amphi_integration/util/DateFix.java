@@ -2,38 +2,26 @@ package com.dedalus.amphi_integration.util;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 public final class DateFix {
 
+    private static final ZoneId STOCKHOLM = ZoneId.of("Europe/Stockholm");
+    private static final DateTimeFormatter OFFSET_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+    private static final DateTimeFormatter SHORT_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+    private static final DateTimeFormatter LONG_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+
+    private DateFix() {
+    }
+
     public static String dateFix(LocalDateTime localDateTime) {
-        String returnDate;
-        if (localDateTime != null) {
-
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
-            ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("Europe/Stockholm"));
-
-            returnDate = zonedDateTime.format(dateTimeFormatter);
-        } else {
-            returnDate = null;
-        }
-
-        return returnDate;
+        return format(localDateTime, OFFSET_FORMATTER);
     }
 
     public static String dateFixShort(LocalDateTime localDateTime) {
-        String returnDate;
-        if (localDateTime != null) {
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-            ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("Europe/Stockholm"));
-
-            returnDate = zonedDateTime.format(dateTimeFormatter);
-        } else {
-            returnDate = null;
-        }
-
-        return returnDate;
+        return format(localDateTime, SHORT_FORMATTER);
     }
 
     /**
@@ -45,16 +33,25 @@ public final class DateFix {
      *         and converted to the Europe/Stockholm time zone, or null if localDateTime is null
      */
     public static String dateFixLong(LocalDateTime localDateTime) {
-        String returnDate;
-        if (localDateTime != null) {
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-            ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("Europe/Stockholm"));
+        return format(localDateTime, LONG_FORMATTER);
+    }
 
-            returnDate = zonedDateTime.format(dateTimeFormatter);
-        } else {
-            returnDate = null;
+    public static LocalDateTime toStockholmLocalTime(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return null;
+        }
+        return asStockholm(localDateTime).toLocalDateTime();
+    }
+
+    private static String format(LocalDateTime localDateTime, DateTimeFormatter formatter) {
+        if (localDateTime == null) {
+            return null;
         }
 
-        return returnDate;
+        return asStockholm(localDateTime).format(formatter);
+    }
+
+    private static ZonedDateTime asStockholm(LocalDateTime localDateTime) {
+        return localDateTime.atOffset(ZoneOffset.UTC).atZoneSameInstant(STOCKHOLM);
     }
 }

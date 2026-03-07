@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.google.gson.Gson;
 import com.dedalus.amphi_integration.model.amphi.MethaneReport;
 import com.dedalus.amphi_integration.repository.EvamMethaneReportRepository;
+import com.dedalus.amphi_integration.util.WrappedPayloadParser;
 
 @Slf4j
 @Service
@@ -19,7 +20,8 @@ public class EvamMethaneReportServiceImpl {
     EvamMethaneReportRepository evamMethaneReportRepository;
 
     public MethaneReport updateMethaneReport(String json) {
-        MethaneReport methaneReport = gson.fromJson(json, MethaneReport.class);
+        MethaneReport methaneReport = WrappedPayloadParser.parseObject(json, gson, MethaneReport.class,
+            "methaneReport", "methanereport");
         log.info("Updating MethaneReport: {}", methaneReport);
 
         Optional<MethaneReport> existingMethaneReport = evamMethaneReportRepository.findById("1");

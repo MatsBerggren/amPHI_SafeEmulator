@@ -2,8 +2,8 @@
   "1" : {
     "id" : "1",
     "unitId" : "1",
-    "msisdn" : null,
-    "issi" : null,
-    "gssi" : null
+    "msisdn" : "3319110",
+    "issi" : "331911",
+    "gssi" : "331912"
   }
 }

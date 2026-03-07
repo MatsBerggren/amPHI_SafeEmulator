@@ -1,12 +1,32 @@
 {
   "1" : {
     "id" : "1",
-    "name" : null,
-    "event" : null,
-    "successorName" : null,
-    "isStartStatus" : null,
-    "isEndStatus" : null,
-    "categoryType" : null,
-    "categoryName" : null
+    "name" : "På väg",
+    "event" : "PA_VAG",
+    "successorName" : "Framme",
+    "isStartStatus" : true,
+    "isEndStatus" : false,
+    "categoryType" : "mission",
+    "categoryName" : "mission"
+  },
+  "2" : {
+    "id" : "2",
+    "name" : "Framme",
+    "event" : "FRAMME",
+    "successorName" : "Klar Uppdrag",
+    "isStartStatus" : false,
+    "isEndStatus" : false,
+    "categoryType" : "mission",
+    "categoryName" : "mission"
+  },
+  "3" : {
+    "id" : "3",
+    "name" : "Klar Uppdrag",
+    "event" : "KLAR_UPPDRAG",
+    "successorName" : "",
+    "isStartStatus" : false,
+    "isEndStatus" : true,
+    "categoryType" : "mission",
+    "categoryName" : "mission"
   }
 }

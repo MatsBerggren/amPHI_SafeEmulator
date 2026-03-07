@@ -1,27 +1,44 @@
 package com.dedalus.amphi_integration.util;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 
-public class LocalDateTimeDeserializer implements JsonDeserializer<LocalDateTime> {
-    private static final DateTimeFormatter WITH_MS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", new Locale("sv"));
-    private static final DateTimeFormatter WITHOUT_MS = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", new Locale("sv"));
+public class LocalDateTimeDeserializer extends com.fasterxml.jackson.databind.JsonDeserializer<LocalDateTime>
+        implements JsonDeserializer<LocalDateTime> {
 
     @Override
     public LocalDateTime deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
             throws JsonParseException {
-        String value = json.getAsString();
+        return parse(json.getAsString());
+    }
+
+    @Override
+    public LocalDateTime deserialize(JsonParser parser, DeserializationContext context) throws IOException {
+        return parse(parser.getValueAsString());
+    }
+
+    private LocalDateTime parse(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+
         try {
-            return LocalDateTime.parse(value, WITH_MS);
-        } catch (Exception e) {
-            return LocalDateTime.parse(value, WITHOUT_MS);
+            return OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+                    .withOffsetSameInstant(ZoneOffset.UTC)
+                    .toLocalDateTime();
+        } catch (Exception ignored) {
+            return LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         }
     }
 }

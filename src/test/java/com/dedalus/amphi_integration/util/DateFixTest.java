@@ -4,6 +4,7 @@ import com.dedalus.amphi_integration.util.DateFix;
 
 import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,8 +29,7 @@ class DateFixTest {
     @Test
     void dateFix_WithValidDateTime_ReturnsFormattedStringWithTimezone() {
         // Arrange
-        // 2024-01-15 14:30:45 (arbitrary test date)
-        LocalDateTime testDateTime = LocalDateTime.of(2024, 1, 15, 14, 30, 45);
+                LocalDateTime testDateTime = LocalDateTime.of(2024, 1, 15, 14, 30, 45);
 
         // Act
         String result = DateFix.dateFix(testDateTime);
@@ -39,7 +39,7 @@ class DateFixTest {
         // Format is yyyy-MM-dd'T'HH:mm:ssXXX (with timezone offset)
         assertTrue(result.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}"),
                 "Result should match ISO 8601 format with timezone offset: " + result);
-        assertTrue(result.startsWith("2024-01-15T14:30:45"),
+        assertTrue(result.startsWith("2024-01-15T15:30:45"),
                 "Result should contain correct date and time: " + result);
     }
 
@@ -53,7 +53,7 @@ class DateFixTest {
 
         // Assert
         assertNotNull(result);
-        assertTrue(result.startsWith("2024-06-20T00:00:00"),
+        assertTrue(result.startsWith("2024-06-20T02:00:00"),
                 "Midnight should be formatted correctly: " + result);
     }
 
@@ -70,7 +70,7 @@ class DateFixTest {
     }
 
     @Test
-    void dateFixShort_WithValidDateTime_ReturnsFormattedStringWithZ() {
+        void dateFixShort_WithValidDateTime_ReturnsFormattedStringWithOffset() {
         // Arrange
         LocalDateTime testDateTime = LocalDateTime.of(2024, 3, 10, 9, 15, 30);
 
@@ -79,11 +79,10 @@ class DateFixTest {
 
         // Assert
         assertNotNull(result, "dateFixShort should not return null for valid input");
-        // Format is yyyy-MM-dd'T'HH:mm:ss'Z'
-        assertTrue(result.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z"),
-                "Result should match format yyyy-MM-dd'T'HH:mm:ss'Z': " + result);
-        assertEquals("2024-03-10T09:15:30Z", result,
-                "Result should be formatted correctly with Z suffix");
+        assertTrue(result.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}"),
+                "Result should match format yyyy-MM-dd'T'HH:mm:ssXXX: " + result);
+        assertEquals("2024-03-10T10:15:30+01:00", result,
+                "Result should be formatted correctly in Stockholm time");
     }
 
     @Test
@@ -96,7 +95,7 @@ class DateFixTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals("2024-12-31T23:59:59Z", result,
+        assertEquals("2025-01-01T00:59:59+01:00", result,
                 "End of day should be formatted correctly");
     }
 
@@ -122,10 +121,9 @@ class DateFixTest {
 
         // Assert
         assertNotNull(result, "dateFixLong should not return null for valid input");
-        // Format is yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
-        assertTrue(result.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z"),
-                "Result should match format yyyy-MM-dd'T'HH:mm:ss.SSS'Z': " + result);
-        assertEquals("2024-07-04T16:45:20.123Z", result,
+        assertTrue(result.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}[+-]\\d{2}:\\d{2}"),
+                "Result should match format yyyy-MM-dd'T'HH:mm:ss.SSSXXX: " + result);
+        assertEquals("2024-07-04T18:45:20.123+02:00", result,
                 "Result should include milliseconds");
     }
 
@@ -139,7 +137,7 @@ class DateFixTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals("2024-02-28T12:00:00.000Z", result,
+        assertEquals("2024-02-28T13:00:00.000+01:00", result,
                 "Zero milliseconds should be formatted as .000");
     }
 
@@ -154,7 +152,7 @@ class DateFixTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals("2024-11-11T11:11:11.999Z", result,
+        assertEquals("2024-11-11T12:11:11.999+01:00", result,
                 "Max milliseconds should be formatted correctly");
     }
 
@@ -185,4 +183,27 @@ class DateFixTest {
         assertTrue(resultLong.contains("."),
                 "dateFixLong should contain milliseconds");
     }
+
+        @Test
+        void toStockholmLocalTime_ConvertsUtcToLocalTime() {
+                LocalDateTime utcDateTime = LocalDateTime.of(2024, 1, 15, 14, 30, 45);
+
+                LocalDateTime result = DateFix.toStockholmLocalTime(utcDateTime);
+
+                assertEquals(LocalDateTime.of(2024, 1, 15, 15, 30, 45), result);
+        }
+
+        @Test
+        void localDateTimeJsonSemantics_UseUtcOnReadAndWrite() {
+                LocalDateTimeSerializer serializer = new LocalDateTimeSerializer();
+                LocalDateTimeDeserializer deserializer = new LocalDateTimeDeserializer();
+                LocalDateTime utcDateTime = LocalDateTime.of(2024, 7, 4, 16, 45, 20, 123000000);
+
+                String serialized = serializer.serialize(utcDateTime, LocalDateTime.class, null).getAsString();
+                LocalDateTime parsed = deserializer.deserialize(new com.google.gson.JsonPrimitive("2024-07-04T18:45:20.123+02:00"), LocalDateTime.class, null);
+
+                assertEquals("2024-07-04T16:45:20.123Z", serialized);
+                assertEquals(utcDateTime, parsed);
+                assertEquals(ZoneOffset.UTC, utcDateTime.atOffset(ZoneOffset.UTC).getOffset());
+        }
 }

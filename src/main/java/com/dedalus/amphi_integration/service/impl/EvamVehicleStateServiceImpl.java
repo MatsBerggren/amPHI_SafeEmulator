@@ -17,6 +17,7 @@ import com.dedalus.amphi_integration.repository.EvamVehicleStateRepository;
 import com.dedalus.amphi_integration.repository.EvamVehicleStatusRepository;
 import com.dedalus.amphi_integration.repository.OperationDistanceRepository;
 import com.dedalus.amphi_integration.service.EvamVehicleStateService;
+import com.dedalus.amphi_integration.util.WrappedPayloadParser;
 import com.google.gson.Gson;
 
 @Slf4j
@@ -46,7 +47,8 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
 
     @Override
     public VehicleState updateVehicleState(String json) {
-        VehicleState vehicleState = gson.fromJson(json, VehicleState.class);
+        VehicleState vehicleState = WrappedPayloadParser.parseObject(json, gson, VehicleState.class,
+            "vehicleState", "vehiclestate");
 
         log.debug("Processing vehicle state update");
 
@@ -56,13 +58,15 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
         String vehicleStatusId = getVehicleStatusId(vehicleState);
         log.debug("Actual State ID: {}", vehicleStatusId);
 
+        boolean statusChanged = !lastVehicleStatusId.equals(vehicleStatusId);
+
         double distance = calculateDistance(vehicleState);
 
-        if (distance > 0) {
-            updateOperationDistance(vehicleState, distance, lastVehicleStatusId, vehicleStatusId);
+        if (distance > 0 || statusChanged) {
+            updateOperationDistance(vehicleState, distance, lastVehicleStatusId, vehicleStatusId, statusChanged);
         }
 
-        if (!lastVehicleStatusId.equals(vehicleStatusId)) {
+        if (statusChanged) {
             Optional<OperationDistance> latestOperationDistanceForPreviousState = operationDistanceRepository
                     .findFirstByOperationIDAndStateIDOrderByTimestampDesc(vehicleState.getActiveCaseFullId(), lastVehicleStatusId);
             double stateEntryDistance = latestOperationDistanceForPreviousState.map(OperationDistance::getStateEntryDistance).orElse(0.0);
@@ -118,20 +122,24 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
         return 0;
     }
     
-    private void updateOperationDistance(VehicleState vehicleState, double distance, String lastVehicleStatusId, String vehicleStatusId) {
+    private void updateOperationDistance(VehicleState vehicleState, double distance, String lastVehicleStatusId, String vehicleStatusId, boolean statusChanged) {
         Optional<OperationDistance> latestOperationDistance = operationDistanceRepository.findFirstByOrderByTimestampDesc();
 
         OperationDistance operationDistance = latestOperationDistance.map(od -> {
+            double previousPublishedAssignmentDistance = od.getPublishedAssignmentDistance() == null ? 0.0 : od.getPublishedAssignmentDistance();
             double totalAssignmentDistance = od.getAssignmentDistance() == null ? distance : od.getAssignmentDistance() + distance;
             double totalStateEntryDistance = od.getStateEntryDistance() == null ? distance : od.getStateEntryDistance() + distance;
+            double publishedAssignmentDistance = previousPublishedAssignmentDistance;
 
             if (!od.getOperationID().equals(vehicleState.getActiveCaseFullId())) {
                 totalAssignmentDistance = distance;
                 totalStateEntryDistance = distance;
+                publishedAssignmentDistance = 0.0;
             }
 
-            if (!lastVehicleStatusId.equals(vehicleStatusId)) {
+            if (statusChanged) {
                 totalStateEntryDistance = distance;
+                publishedAssignmentDistance = totalAssignmentDistance;
             }
 
             return OperationDistance.builder()
@@ -139,16 +147,19 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
                     .operationID(vehicleState.getActiveCaseFullId())
                     .distance(distance)
                     .assignmentDistance(totalAssignmentDistance)
+                    .publishedAssignmentDistance(publishedAssignmentDistance)
                     .stateEntryDistance(totalStateEntryDistance)
                     .stateID(vehicleStatusId)
                     .location(vehicleState.getVehicleLocation())
                     .build();
         }).orElseGet(() -> {
+            double publishedAssignmentDistance = statusChanged ? distance : 0.0;
             return OperationDistance.builder()
                     .timestamp(LocalDateTime.now())
                     .operationID(vehicleState.getActiveCaseFullId())
                     .distance(distance)
                     .assignmentDistance(distance)
+                    .publishedAssignmentDistance(publishedAssignmentDistance)
                     .stateEntryDistance(distance)
                     .stateID(vehicleStatusId)
                     .location(vehicleState.getVehicleLocation())

@@ -14,6 +14,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import com.dedalus.amphi_integration.model.evam.RakelState;
 import com.dedalus.amphi_integration.repository.EvamRakelStateRepository;
+import com.dedalus.amphi_integration.AppConfig;
 import com.google.gson.Gson;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,7 +27,7 @@ class EvamRakelStateServiceImplTest {
     private EvamRakelStateServiceImpl evamRakelStateService;
 
         @Spy
-    private final Gson gson = new Gson();
+    private final Gson gson = new AppConfig().gson();
 
     @Test
     void updateRakelState_WithNullMsisdn_PreservesStoredMsisdn() {
@@ -40,6 +41,7 @@ class EvamRakelStateServiceImplTest {
         RakelState incoming = RakelState.builder()
                 .issi("new-issi")
                 .gssi("new-gssi")
+            .isHealthy(true)
                 .build();
 
         when(evamRakelStateRepository.findById("1")).thenReturn(Optional.of(existing));
@@ -51,6 +53,7 @@ class EvamRakelStateServiceImplTest {
         assertEquals("3393090", result.getMsisdn());
         assertEquals("new-issi", result.getIssi());
         assertEquals("new-gssi", result.getGssi());
+        assertEquals(true, result.getIsHealthy());
 
         verify(evamRakelStateRepository).save(existing);
     }
@@ -66,6 +69,7 @@ class EvamRakelStateServiceImplTest {
                 .msisdn("0000567")
                 .issi("issi")
                 .gssi("gssi")
+            .isHealthy(false)
                 .build();
 
         when(evamRakelStateRepository.findById("1")).thenReturn(Optional.of(existing));
@@ -76,6 +80,7 @@ class EvamRakelStateServiceImplTest {
         assertEquals("3393090", result.getMsisdn());
         assertEquals("issi", result.getIssi());
         assertEquals("gssi", result.getGssi());
+        assertEquals(false, result.getIsHealthy());
 
         verify(evamRakelStateRepository).save(existing);
     }

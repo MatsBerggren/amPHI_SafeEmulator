@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.google.gson.Gson;
 import com.dedalus.amphi_integration.model.evam.RakelState;
 import com.dedalus.amphi_integration.repository.EvamRakelStateRepository;
+import com.dedalus.amphi_integration.util.WrappedPayloadParser;
 
 @Service
 public class EvamRakelStateServiceImpl {
@@ -16,7 +17,8 @@ public class EvamRakelStateServiceImpl {
     Gson gson;
 
     public RakelState updateRakelState(String json) {
-        RakelState rakelState = gson.fromJson(json, RakelState.class);
+        RakelState rakelState = WrappedPayloadParser.parseObject(json, gson, RakelState.class,
+            "rakelState", "rakelstate");
 
         Optional<RakelState> existingRakelState = evamRakelStateRepository.findById("1");
         if (existingRakelState.isEmpty()) {
@@ -35,6 +37,9 @@ public class EvamRakelStateServiceImpl {
 
             storedRakelState.setIssi(rakelState.getIssi());
             storedRakelState.setGssi(rakelState.getGssi());
+            if (rakelState.getIsHealthy() != null) {
+                storedRakelState.setIsHealthy(rakelState.getIsHealthy());
+            }
             return evamRakelStateRepository.save(storedRakelState);
         }
     }

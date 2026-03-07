@@ -1,10 +1,14 @@
 package com.dedalus.amphi_integration.model.evam; 
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LeavePatientLocation {
         private Double latitude;
         private Double longitude;

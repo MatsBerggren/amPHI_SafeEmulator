@@ -1,0 +1,114 @@
+{
+  "6ebd9b71-88f8-4d3d-9267-9c6e7ce5e901" : {
+    "timestamp" : "2026-03-07T11:48:52.178788800Z",
+    "operationID" : "1:9876543212:100",
+    "distance" : 630.535714210125,
+    "assignmentDistance" : 630.535714210125,
+    "publishedAssignmentDistance" : 0.0,
+    "stateID" : "1",
+    "stateEntryDistance" : 630.535714210125,
+    "location" : {
+      "latitude" : 57.66,
+      "longitude" : 14.08,
+      "timestamp" : "2026-03-07T10:11:45.000Z"
+    }
+  },
+  "996a78ff-d195-4291-b0a8-bfa5cfd4a59f" : {
+    "timestamp" : "2026-03-07T11:49:41.371821100Z",
+    "operationID" : "1:9876543213:101",
+    "distance" : 630.535714210125,
+    "assignmentDistance" : 630.535714210125,
+    "publishedAssignmentDistance" : 0.0,
+    "stateID" : "1",
+    "stateEntryDistance" : 630.535714210125,
+    "location" : {
+      "latitude" : 57.66,
+      "longitude" : 14.08,
+      "timestamp" : "2026-03-07T10:21:45.000Z"
+    }
+  },
+  "7065ba17-6501-4785-8a08-895268151539" : {
+    "timestamp" : "2026-03-07T11:48:52.201600200Z",
+    "operationID" : "1:9876543212:100",
+    "distance" : 630.516378475471,
+    "assignmentDistance" : 1261.052092685596,
+    "publishedAssignmentDistance" : 1261.052092685596,
+    "stateID" : "2",
+    "stateEntryDistance" : 630.516378475471,
+    "location" : {
+      "latitude" : 57.665,
+      "longitude" : 14.085,
+      "timestamp" : "2026-03-07T10:12:45.000Z"
+    }
+  },
+  "a5f4686e-4e72-4b39-82f3-b42a33c5ecfd" : {
+    "timestamp" : "2026-03-07T11:47:35.095585900Z",
+    "operationID" : "1:9876543211:99",
+    "distance" : 630.4970437441262,
+    "assignmentDistance" : 1261.0134222195973,
+    "publishedAssignmentDistance" : 0.0,
+    "stateID" : "0",
+    "stateEntryDistance" : 1261.0134222195973,
+    "location" : {
+      "latitude" : 57.67,
+      "longitude" : 14.09,
+      "timestamp" : "2026-03-07T10:03:00.000Z"
+    }
+  },
+  "3ad81a2a-2fb3-42d3-90cd-8a1baecee32f" : {
+    "timestamp" : "2026-03-07T11:47:35.067007600Z",
+    "operationID" : "1:9876543211:99",
+    "distance" : 630.516378475471,
+    "assignmentDistance" : 630.516378475471,
+    "publishedAssignmentDistance" : 0.0,
+    "stateID" : "0",
+    "stateEntryDistance" : 630.516378475471,
+    "location" : {
+      "latitude" : 57.665,
+      "longitude" : 14.085,
+      "timestamp" : "2026-03-07T10:02:00.000Z"
+    }
+  },
+  "a4561de2-c2e4-432a-b2cc-da1ba390c9f5" : {
+    "timestamp" : "2026-03-07T11:48:52.090484300Z",
+    "operationID" : "1:9876543212:100",
+    "distance" : 0.0,
+    "assignmentDistance" : 0.0,
+    "publishedAssignmentDistance" : 0.0,
+    "stateID" : "1",
+    "stateEntryDistance" : 0.0,
+    "location" : {
+      "latitude" : 57.655,
+      "longitude" : 14.075,
+      "timestamp" : "2026-03-07T10:10:45.000Z"
+    }
+  },
+  "24aa2a47-c0bb-4691-a3d5-0322923c06ca" : {
+    "timestamp" : "2026-03-07T11:49:40.834933300Z",
+    "operationID" : "1:9876543213:101",
+    "distance" : 0.0,
+    "assignmentDistance" : 0.0,
+    "publishedAssignmentDistance" : 0.0,
+    "stateID" : "1",
+    "stateEntryDistance" : 0.0,
+    "location" : {
+      "latitude" : 57.655,
+      "longitude" : 14.075,
+      "timestamp" : "2026-03-07T10:20:45.000Z"
+    }
+  },
+  "02168c46-06d2-423a-9910-5d478d9f6d0c" : {
+    "timestamp" : "2026-03-07T11:49:41.914788Z",
+    "operationID" : "1:9876543213:101",
+    "distance" : 630.516378475471,
+    "assignmentDistance" : 1261.052092685596,
+    "publishedAssignmentDistance" : 1261.052092685596,
+    "stateID" : "2",
+    "stateEntryDistance" : 630.516378475471,
+    "location" : {
+      "latitude" : 57.665,
+      "longitude" : 14.085,
+      "timestamp" : "2026-03-07T10:22:45.000Z"
+    }
+  }
+}

@@ -3,11 +3,19 @@ package com.dedalus.amphi_integration.model.evam;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import com.dedalus.amphi_integration.util.FlexibleIntegerDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.google.gson.annotations.JsonAdapter;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Operation {
     private String id;
     private String amPHIUniqueId;
@@ -43,8 +51,12 @@ public class Operation {
     private String header2;
     private String eventInfo;
     private String caseInfo;
-    private String selectedHospital;
-    private String selectedPriority;
+    @JsonAdapter(FlexibleIntegerDeserializer.class)
+    @JsonDeserialize(using = FlexibleIntegerDeserializer.class)
+    private Integer selectedHospital;
+    @JsonAdapter(FlexibleIntegerDeserializer.class)
+    @JsonDeserialize(using = FlexibleIntegerDeserializer.class)
+    private Integer selectedPriority;
     private OperationState operationState;
     private LeavePatientLocation leavePatientLocation;
     private String assignedResourceMissionNo;

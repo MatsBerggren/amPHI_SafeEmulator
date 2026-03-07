@@ -14,6 +14,7 @@ import com.dedalus.amphi_integration.repository.EvamOperationRepository;
 import com.dedalus.amphi_integration.repository.EvamTripLocationHistoryRepository;
 import com.dedalus.amphi_integration.repository.EvamVehicleStateRepository;
 import com.dedalus.amphi_integration.service.EvamOperationService;
+import com.dedalus.amphi_integration.util.WrappedPayloadParser;
 import com.google.gson.Gson;
 
 @Slf4j
@@ -37,7 +38,7 @@ public class EvamOperationServiceImpl implements EvamOperationService {
 
     @Override
     public Operation updateOperation(String json) {
-        Operation operation = gson.fromJson(json, Operation.class);
+        Operation operation = parseOperation(json);
         Optional<Operation> existingOperation = evamOperationRepository.findById("1");
 
         if (existingOperation.isEmpty() || !operation.getFullId().equals(existingOperation.get().getFullId())) {
@@ -47,6 +48,10 @@ public class EvamOperationServiceImpl implements EvamOperationService {
         }
 
         return updateExistingOperation(existingOperation.get(), operation);
+    }
+
+    private Operation parseOperation(String json) {
+        return WrappedPayloadParser.parseObject(json, gson, Operation.class, "operation");
     }
 
     private void cleanDB() {
@@ -59,7 +64,6 @@ public class EvamOperationServiceImpl implements EvamOperationService {
 
     private Operation saveNewOperation(Operation operation) {
         operation.setId("1");
-        operation.setSelectedHospital("");
         operation.setAmPHIUniqueId(UUID.randomUUID().toString());
         return evamOperationRepository.save(operation);
     }

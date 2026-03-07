@@ -1,9 +1,22 @@
 {
   "1" : {
     "id" : "1",
-    "timestamp" : null,
-    "vehicleStatus" : null,
-    "activeCaseFullId" : null,
-    "vehicleLocation" : null
+    "timestamp" : "2026-03-07T10:22:45Z",
+    "vehicleStatus" : {
+      "id" : null,
+      "name" : "Framme",
+      "event" : null,
+      "successorName" : null,
+      "isStartStatus" : null,
+      "isEndStatus" : null,
+      "categoryType" : null,
+      "categoryName" : null
+    },
+    "activeCaseFullId" : "1:9876543213:101",
+    "vehicleLocation" : {
+      "latitude" : 57.665,
+      "longitude" : 14.085,
+      "timestamp" : "2026-03-07T10:22:45.000Z"
+    }
   }
 }

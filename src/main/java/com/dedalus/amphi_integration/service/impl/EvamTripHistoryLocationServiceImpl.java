@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.dedalus.amphi_integration.model.evam.TripLocationHistory;
 import com.dedalus.amphi_integration.repository.EvamTripLocationHistoryRepository;
+import com.dedalus.amphi_integration.util.WrappedPayloadParser;
 import com.google.gson.Gson;
 
 @Service
@@ -16,7 +17,8 @@ public class EvamTripHistoryLocationServiceImpl {
     Gson gson;
 
     public TripLocationHistory updateTripLocationHistory(String json) {
-        TripLocationHistory tripLocationHistory = gson.fromJson(json, TripLocationHistory.class);
+        TripLocationHistory tripLocationHistory = WrappedPayloadParser.parseObject(json, gson, TripLocationHistory.class,
+            "tripLocationHistory", "triplocationhistory");
         evamTripLocationHistoryRepository.deleteById("1");
         tripLocationHistory.setId("1");
         evamTripLocationHistoryRepository.save(tripLocationHistory);
