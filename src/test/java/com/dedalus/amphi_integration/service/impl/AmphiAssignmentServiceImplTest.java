@@ -9,10 +9,9 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -38,7 +37,6 @@ import com.dedalus.amphi_integration.model.evam.OperationState;
 import com.dedalus.amphi_integration.model.evam.TripLocationHistory;
 import com.dedalus.amphi_integration.model.evam.VehicleState;
 import com.dedalus.amphi_integration.model.evam.VehicleStatus;
-import com.dedalus.amphi_integration.repository.AmphiAssignmentRepository;
 import com.dedalus.amphi_integration.repository.AmphiAssignmentHistoryRepository;
 import com.dedalus.amphi_integration.repository.AmphiDestinationRepository;
 import com.dedalus.amphi_integration.repository.OperationDistanceRepository;
@@ -85,11 +83,6 @@ class AmphiAssignmentServiceImplTest {
 
     @InjectMocks
     private AmphiAssignmentServiceImpl amphiAssignmentService;
-
-    @BeforeEach
-    void setUp() {
-        // Setup common mocks if needed
-    }
 
     // ========== Tests for getDifferences() static method ==========
 
@@ -603,7 +596,7 @@ class AmphiAssignmentServiceImplTest {
 
         Assignment[] result = amphiAssignmentService.getAllAssignments();
 
-                assertNull(result[0].getPosition());
+        assertNull(result[0].getPosition());
     }
 
     @Test
@@ -656,7 +649,8 @@ class AmphiAssignmentServiceImplTest {
      * Simple test class for testing getDifferences() method.
      * Must be static so it can be used in static method tests.
      */
-    private static class TestObject {
+        @SuppressWarnings("unused")
+        private static class TestObject {
         private String stringField;
         private int intField;
 
@@ -666,7 +660,7 @@ class AmphiAssignmentServiceImplTest {
         }
     }
 
-        private String getPropertyValue(List<Property> properties, String name) {
+        private static String getPropertyValue(List<Property> properties, String name) {
                 for (Property property : properties) {
                         if (property.getName().equals(name)) {
                                 return property.getValue();

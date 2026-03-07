@@ -18,7 +18,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Generic JSON file-based repository for storing entities.
@@ -31,7 +30,6 @@ public class JsonFileRepository<T> {
     private final ObjectMapper objectMapper;
     private final Map<String, T> storage = new ConcurrentHashMap<>();
     private final String dataDirectory = "data";
-    private final Class<T> entityClass;
     private String fileName;
 
     public JsonFileRepository() {
@@ -43,7 +41,6 @@ public class JsonFileRepository<T> {
         this.objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        this.entityClass = null;
     }
 
     /**

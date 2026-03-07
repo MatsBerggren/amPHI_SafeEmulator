@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.dedalus.amphi_integration.model.evam.Operation;
 import com.dedalus.amphi_integration.model.evam.VehicleState;
-import com.dedalus.amphi_integration.repository.AmphiAssignmentRepository;
 import com.dedalus.amphi_integration.repository.AmphiStateEntryRepository;
 import com.dedalus.amphi_integration.repository.EvamMethaneReportRepository;
 import com.dedalus.amphi_integration.repository.EvamOperationRepository;
@@ -21,8 +20,6 @@ import com.google.gson.Gson;
 @Service
 public class EvamOperationServiceImpl implements EvamOperationService {
 
-    @Autowired
-    private AmphiAssignmentRepository amphiAssignmentRepository;
     @Autowired
     private EvamOperationRepository evamOperationRepository;
     @Autowired

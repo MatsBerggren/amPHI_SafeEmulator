@@ -99,7 +99,6 @@ class EvamVehicleStateServiceImplTest {
 
     @Test
     void updateVehicleState_WithStatusChange_PublishesNewAssignmentDistanceSnapshot() {
-        VehicleStatus previousStatus = VehicleStatus.builder().id("2").name("På väg").build();
         VehicleStatus newStatus = VehicleStatus.builder().id("3").name("Framme").build();
         VehicleState previousState = VehicleState.builder()
                 .id("1")
