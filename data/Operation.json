@@ -1,15 +1,15 @@
 {
   "1" : {
     "id" : "1",
-    "amPHIUniqueId" : "738477de-70a9-40bc-9716-3b3dfc890d81",
-    "operationID" : "3",
-    "name" : "Inferred from log context",
-    "sendTime" : null,
-    "createdTime" : null,
+    "amPHIUniqueId" : "fb86377c-c598-4371-841d-44975be96450",
+    "operationID" : "1",
+    "name" : "Sjuktransporter",
+    "sendTime" : "2026-03-06T17:37:47Z",
+    "createdTime" : "2026-03-06T17:33:33Z",
     "endTime" : null,
-    "acceptedTime" : null,
+    "acceptedTime" : "2026-03-06T17:45:42Z",
     "callCenterId" : "18",
-    "caseFolderId" : "17868376",
+    "caseFolderId" : "17869921",
     "transmitterCode" : null,
     "alarmCategory" : null,
     "alarmEventCode" : null,
@@ -23,23 +23,958 @@
     "radioGroupMain" : null,
     "radioGroupSecondary" : null,
     "additionalCoordinationInformation" : null,
-    "availablePriorities" : null,
-    "patientName" : null,
-    "patientUID" : null,
-    "vehicleStatus" : null,
-    "destinationSiteLocation" : null,
+    "availablePriorities" : [ {
+      "id" : 1,
+      "name" : "PRIO 1"
+    }, {
+      "id" : 2,
+      "name" : "PRIO 2"
+    }, {
+      "id" : 3,
+      "name" : "PRIO 3"
+    }, {
+      "id" : 4,
+      "name" : "PRIO 4"
+    } ],
+    "patientName" : "Ulf Michael Carnheden",
+    "patientUID" : "195102060232",
+    "vehicleStatus" : {
+      "id" : null,
+      "name" : "Ank Dest",
+      "event" : "EVENT_AT_HOSPITAL",
+      "successorName" : "Klar Uppdrag",
+      "isStartStatus" : false,
+      "isEndStatus" : false,
+      "categoryType" : "STATUS_MISSION",
+      "categoryName" : "mission"
+    },
+    "destinationSiteLocation" : {
+      "latitude" : 59.30996666666667,
+      "longitude" : 18.055866666666667,
+      "street" : "SÖS, AKM, Modul Accu, K95",
+      "locality" : "Södermalm",
+      "municipality" : "Stockholm",
+      "routeDirections" : null,
+      "pickupTime" : "2026-03-06 18:00:00.000"
+    },
     "breakpointLocation" : null,
-    "availableHospitalLocations" : null,
-    "header1" : null,
-    "header2" : null,
-    "eventInfo" : null,
-    "caseInfo" : "18:17868376:3",
+    "availableHospitalLocations" : [ {
+      "id" : 0,
+      "latitude" : 59.33875,
+      "longitude" : 17.94002,
+      "name" : "Bromma Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 1,
+      "latitude" : 59.35577,
+      "longitude" : 17.94608,
+      "name" : "Bromma flygplats",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 2,
+      "latitude" : 59.28851,
+      "longitude" : 18.09889,
+      "name" : "Dalen Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 3,
+      "latitude" : 59.28851,
+      "longitude" : 18.09889,
+      "name" : "Dalens sjukhus Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 4,
+      "latitude" : 59.38924,
+      "longitude" : 18.04066,
+      "name" : "Danderyd Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 5,
+      "latitude" : 59.39127,
+      "longitude" : 18.03845,
+      "name" : "Danderyds sjukhus Akutmottagning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 6,
+      "latitude" : 59.39314,
+      "longitude" : 18.03853,
+      "name" : "Danderyds sjukhus Förlossning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 7,
+      "latitude" : 59.39324,
+      "longitude" : 18.04029,
+      "name" : "Danderyds sjukhus Gynakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 8,
+      "latitude" : 59.39127,
+      "longitude" : 18.03845,
+      "name" : "Danderyds sjukhus HIA",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 9,
+      "latitude" : 59.39127,
+      "longitude" : 18.03845,
+      "name" : "Danderyds sjukhus RTG",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 10,
+      "latitude" : 59.39127,
+      "longitude" : 18.03845,
+      "name" : "Danderyds sjukhus Övrigt",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 11,
+      "latitude" : 59.314856,
+      "longitude" : 18.117132,
+      "name" : "Danviksgeriatriken Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 12,
+      "latitude" : 59.31172,
+      "longitude" : 18.70401,
+      "name" : "Djurö VC",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 13,
+      "latitude" : 59.28945,
+      "longitude" : 17.81051,
+      "name" : "Ekerö VC",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 14,
+      "latitude" : 59.31672,
+      "longitude" : 18.08982,
+      "name" : "Ersta sjukhus Övrigt",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 15,
+      "latitude" : 59.32313,
+      "longitude" : 18.38012,
+      "name" : "Gustavsbergs VC",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 16,
+      "latitude" : 59.34729,
+      "longitude" : 18.10396,
+      "name" : "Gärdets VC",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 17,
+      "latitude" : 59.352987,
+      "longitude" : 18.034525,
+      "name" : "Haga Närakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 18,
+      "latitude" : 59.17355,
+      "longitude" : 18.14163,
+      "name" : "Handen Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 19,
+      "latitude" : 59.17355,
+      "longitude" : 18.14163,
+      "name" : "Handen Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 20,
+      "latitude" : 59.17355,
+      "longitude" : 18.14163,
+      "name" : "Handen Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 21,
+      "latitude" : 59.17355,
+      "longitude" : 18.14163,
+      "name" : "Handens närakut Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 22,
+      "latitude" : 59.17343,
+      "longitude" : 18.14167,
+      "name" : "Handens Vårdcentral Vårdcentral",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 23,
+      "latitude" : 59.2207,
+      "longitude" : 17.93338,
+      "name" : "Huddinge Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 24,
+      "latitude" : 59.2212,
+      "longitude" : 17.93722,
+      "name" : "Huddinge Barnakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 25,
+      "latitude" : 60.05265,
+      "longitude" : 18.59638,
+      "name" : "Husläkarmottagningen Hallstavik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 26,
+      "latitude" : 59.97179,
+      "longitude" : 18.80744,
+      "name" : "Husläkarmottagningen Väddö",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 27,
+      "latitude" : 59.42236,
+      "longitude" : 17.84546,
+      "name" : "Jakobsberg Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 28,
+      "latitude" : 59.42236,
+      "longitude" : 17.84546,
+      "name" : "Jakobsberg Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 29,
+      "latitude" : 59.42236,
+      "longitude" : 17.84546,
+      "name" : "Jakobsbergs Vårdcentral Vårdcentral",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 30,
+      "latitude" : 59.38631,
+      "longitude" : 17.93757,
+      "name" : "Järva Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 31,
+      "latitude" : 59.38631,
+      "longitude" : 17.93757,
+      "name" : "Järva Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 32,
+      "latitude" : 59.22081,
+      "longitude" : 17.93844,
+      "name" : "K Huddinge Förlossning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 33,
+      "latitude" : 59.2212,
+      "longitude" : 17.93722,
+      "name" : "K Huddinge Gynakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 34,
+      "latitude" : 59.2212,
+      "longitude" : 17.93722,
+      "name" : "K Huddinge HIA",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 35,
+      "latitude" : 59.2212,
+      "longitude" : 17.93722,
+      "name" : "K Huddinge RTG",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 36,
+      "latitude" : 59.2212,
+      "longitude" : 17.93722,
+      "name" : "K Huddinge Akutmottagning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 37,
+      "latitude" : 59.2212,
+      "longitude" : 17.93722,
+      "name" : "K Huddinge Barnakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 38,
+      "latitude" : 59.3499341,
+      "longitude" : 18.033259,
+      "name" : "K Solna Akutmottagning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 39,
+      "latitude" : 59.3499341,
+      "longitude" : 18.033259,
+      "name" : "K Solna Barnakuten (ALB)",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 40,
+      "latitude" : 59.35245,
+      "longitude" : 18.03526,
+      "name" : "K Solna Förlossning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 41,
+      "latitude" : 59.35228,
+      "longitude" : 18.03532,
+      "name" : "K Solna Gynakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 42,
+      "latitude" : 59.34976,
+      "longitude" : 18.02915,
+      "name" : "K Solna HIA",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 43,
+      "latitude" : 59.35228,
+      "longitude" : 18.03532,
+      "name" : "K Solna RTG",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 44,
+      "latitude" : 59.2791,
+      "longitude" : 18.0142,
+      "name" : "K Älvsjö Fältsjukhus K Älvsjö IVA entré 1 – PA 5",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 45,
+      "latitude" : 59.47981,
+      "longitude" : 17.75068,
+      "name" : "Kungsängens VC",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 46,
+      "latitude" : 59.39938,
+      "longitude" : 18.03471,
+      "name" : "Kvarersakuten Mörby Centrum AB",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 47,
+      "latitude" : 59.34363,
+      "longitude" : 18.05062,
+      "name" : "Kvartersakuten Matteus",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 48,
+      "latitude" : 59.32839,
+      "longitude" : 18.05313,
+      "name" : "Kvartersakuten Serafen",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 49,
+      "latitude" : 59.34363,
+      "longitude" : 18.05062,
+      "name" : "Kvartersakuten Surbrunnsgatan",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 50,
+      "latitude" : 59.33975,
+      "longitude" : 18.06083,
+      "name" : "Kvartersakuten Tegnérgatan",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 51,
+      "latitude" : 59.54505,
+      "longitude" : 17.90807,
+      "name" : "Löwenströmska Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 52,
+      "latitude" : 59.54505,
+      "longitude" : 17.90807,
+      "name" : "Löwenströmska Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 53,
+      "latitude" : 59.54505,
+      "longitude" : 17.90807,
+      "name" : "Löwenströmska Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 54,
+      "latitude" : 59.54505,
+      "longitude" : 17.90807,
+      "name" : "Löwenströmska Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 55,
+      "latitude" : 59.31556,
+      "longitude" : 18.05776,
+      "name" : "Maria beroendecentrum Södermalm",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 56,
+      "latitude" : 59.33295,
+      "longitude" : 18.02368,
+      "name" : "Maria ungdom Kungsholmen",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 57,
+      "latitude" : 59.31166,
+      "longitude" : 18.196,
+      "name" : "Nacka Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 58,
+      "latitude" : 59.31166,
+      "longitude" : 18.196,
+      "name" : "Nacka Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 59,
+      "latitude" : 59.31188,
+      "longitude" : 18.19837,
+      "name" : "Nacka Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 60,
+      "latitude" : 59.31188,
+      "longitude" : 18.19837,
+      "name" : "Nacka Närakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 61,
+      "latitude" : 59.75748,
+      "longitude" : 18.68911,
+      "name" : "Norrtälje Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 62,
+      "latitude" : 59.75748,
+      "longitude" : 18.68911,
+      "name" : "Norrtälje sjukhus Akutmottagning (inkl HIA)",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 63,
+      "latitude" : 59.75748,
+      "longitude" : 18.68911,
+      "name" : "Norrtälje sjukhus Övrigt",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 64,
+      "latitude" : 58.90329,
+      "longitude" : 17.94497,
+      "name" : "Nynäshamn Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 65,
+      "latitude" : 58.90329,
+      "longitude" : 17.94497,
+      "name" : "Nynäshamn Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 66,
+      "latitude" : 59.33387,
+      "longitude" : 18.03953,
+      "name" : "S:t Erik Ögonakut",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 67,
+      "latitude" : 59.33851,
+      "longitude" : 18.04714,
+      "name" : "Sabbatsberg Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 68,
+      "latitude" : 59.33851,
+      "longitude" : 18.04714,
+      "name" : "Sabbatsberg Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 69,
+      "latitude" : 59.33837,
+      "longitude" : 18.04873,
+      "name" : "Sabbatsberg Vårdcentral",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 70,
+      "latitude" : 59.3499341,
+      "longitude" : 18.033259,
+      "name" : "Solna Barnakuten (ALB)",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 71,
+      "latitude" : 59.33449,
+      "longitude" : 18.02214,
+      "name" : "St Göran Förlossning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 72,
+      "latitude" : 59.33449,
+      "longitude" : 18.02214,
+      "name" : "St Göran Akutmottagning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 73,
+      "latitude" : 59.33449,
+      "longitude" : 18.02214,
+      "name" : "St Göran HIA",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 74,
+      "latitude" : 59.33449,
+      "longitude" : 18.02214,
+      "name" : "St Göran RTG",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 75,
+      "latitude" : 59.33428,
+      "longitude" : 18.02043,
+      "name" : "St Göran Övrigt",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 76,
+      "latitude" : 59.33303,
+      "longitude" : 18.02543,
+      "name" : "Stockholms sjukhem",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 77,
+      "latitude" : 59.33324,
+      "longitude" : 18.0255,
+      "name" : "Stockholms sjukhem - Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 78,
+      "latitude" : 59.309,
+      "longitude" : 18.05796,
+      "name" : "Södermalm Barnakuten (Sachsska)",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 79,
+      "latitude" : 59.30953,
+      "longitude" : 18.05844,
+      "name" : "Södersjukhuset Akutmottagning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 80,
+      "latitude" : 59.309,
+      "longitude" : 18.05796,
+      "name" : "Södersjukhuset Barnakuten (Sachsska)",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 81,
+      "latitude" : 59.30919,
+      "longitude" : 18.05779,
+      "name" : "Södersjukhuset Förlossning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 82,
+      "latitude" : 59.30953,
+      "longitude" : 18.05844,
+      "name" : "Södersjukhuset Gynakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 83,
+      "latitude" : 59.30953,
+      "longitude" : 18.05844,
+      "name" : "Södersjukhuset HIA",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 84,
+      "latitude" : 59.30953,
+      "longitude" : 18.05844,
+      "name" : "Södersjukhuset RTG",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 85,
+      "latitude" : 59.30953,
+      "longitude" : 18.05844,
+      "name" : "Södersjukhuset Övrigt",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 86,
+      "latitude" : 59.19936,
+      "longitude" : 17.6321,
+      "name" : "Södertälje sjukhus Akutmottagning (inkl HIA)",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 87,
+      "latitude" : 59.19936,
+      "longitude" : 17.6321,
+      "name" : "Södertälje sjukhus Förlossning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 88,
+      "latitude" : 59.19936,
+      "longitude" : 17.6321,
+      "name" : "Södertälje sjukhus RTG",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 89,
+      "latitude" : 59.19936,
+      "longitude" : 17.6321,
+      "name" : "Södertälje sjukhus Övrigt",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 90,
+      "latitude" : 59.84992,
+      "longitude" : 17.64005,
+      "name" : "UAS Akutmottagning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 91,
+      "latitude" : 59.84992,
+      "longitude" : 17.64005,
+      "name" : "UAS Barnakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 92,
+      "latitude" : 59.84992,
+      "longitude" : 17.64005,
+      "name" : "UAS Förlossning",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 93,
+      "latitude" : 59.84992,
+      "longitude" : 17.64005,
+      "name" : "UAS Gynakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 94,
+      "latitude" : 59.84992,
+      "longitude" : 17.64005,
+      "name" : "UAS Övrigt",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 95,
+      "latitude" : 59.84992,
+      "longitude" : 17.64005,
+      "name" : "Uppsala Barnakuten",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 96,
+      "latitude" : 59.64324,
+      "longitude" : 17.93673,
+      "name" : "Arlanda",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 97,
+      "latitude" : 59.3586,
+      "longitude" : 17.90071,
+      "name" : "Bromma Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    }, {
+      "id" : 98,
+      "latitude" : 59.3586,
+      "longitude" : 17.90071,
+      "name" : "Bromma Geriatrik",
+      "street1" : null,
+      "city" : null,
+      "region" : null,
+      "postalCode" : null
+    } ],
+    "header1" : "Utlovad tid",
+    "header2" : "B. Transport från akutmottagning och närakut",
+    "eventInfo" : "\nÖverflyttning",
+    "caseInfo" : null,
     "selectedHospital" : null,
-    "selectedPriority" : null,
-    "operationState" : null,
-    "leavePatientLocation" : null,
-    "assignedResourceMissionNo" : null,
-    "operationUnits" : null,
-    "fullId" : "18:17868376:3:0"
+    "selectedPriority" : 4,
+    "operationState" : "ACTIVE",
+    "leavePatientLocation" : {
+      "latitude" : 59.31665,
+      "longitude" : 18.0894,
+      "street" : "Fjällgatan 45, Avd 3, Ger",
+      "locality" : "Södermalm",
+      "municipality" : "Stockholm",
+      "routeDirections" : null,
+      "leaveTime" : null
+    },
+    "assignedResourceMissionNo" : "330-6540\u00162",
+    "operationUnits" : [ {
+      "unitId" : "330-6540",
+      "status" : "Ank Dest",
+      "role" : null,
+      "source" : "CLOUD",
+      "eta" : "2026-03-06T19:17:49.000Z",
+      "reportedInArea" : null
+    } ],
+    "fullId" : "18:17869921:1:2"
   }
 }

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dedalus.amphi_integration.AppConfig;
 import com.dedalus.amphi_integration.model.loganalyzer.LogAnalysisResult;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -63,5 +64,79 @@ class LogAnalysisServiceTest {
         assertEquals(2, result.getApiCalls().get(1).getSequence());
         assertTrue(result.getApiCalls().get(0).getNote().contains("crf22/amPHIIntegration.0.out.log"));
         assertTrue(result.getApiCalls().get(1).getNote().contains("crf22/amPHIIntegration.1.out.log"));
+    }
+
+    @Test
+    void analyzeMany_SortsFilesByTrailingNumberBeforeMerging() throws Exception {
+        LogAnalysisResult result = logAnalysisService.analyzeMany(
+                "Folder upload: crf22 (3 filer)",
+                new ArrayList<>(List.of(
+                        new LogAnalysisService.NamedLogFile(
+                                "crf22/amPHIIntegration.10.out.log",
+                                String.join("\n",
+                                        "2026-03-06T16:58:55.280+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/rakelstate, client=1]",
+                                        "Method EvamController.createNew(..) has returned RakelState(id=1, unitId=null, msisdn=3306540, issi=306540, gssi=09338491)")
+                                        .getBytes(StandardCharsets.UTF_8)),
+                        new LogAnalysisService.NamedLogFile(
+                                "crf22/amPHIIntegration.2.out.log",
+                                String.join("\n",
+                                        "2026-03-06T16:58:54.280+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/vehiclestate, client=1]",
+                                        "Method EvamController.createNew(..) has returned VehicleState(id=1, timestamp=2026-03-06T15:59:39.241, vehicleStatus=VehicleStatus(id=null, name=Avf Hamtplats, event=EVENT_EXIT_SITE, successorName=Ank Dest, isStartStatus=false, isEndStatus=false, categoryType=STATUS_MISSION, categoryName=mission), activeCaseFullId=18:17869359:2, vehicleLocation=Location(latitude=59.20189240674485, longitude=17.640825396998476, timestamp=1772812779234))")
+                                        .getBytes(StandardCharsets.UTF_8)),
+                        new LogAnalysisService.NamedLogFile(
+                                "crf22/amPHIIntegration.1.out.log",
+                                String.join("\n",
+                                        "2026-03-06T16:58:53.280+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/operations, client=1]",
+                                        "2026-03-06T16:58:53.281+01:00 DEBUG 1 --- [nio-8443-exec-1] c.d.a.controller.EvamController          : POST /operations: {\"operationID\":\"2\",\"callCenterId\":\"18\",\"caseFolderId\":\"17869359\"}")
+                                        .getBytes(StandardCharsets.UTF_8)))));
+
+        assertEquals("/api/operations", result.getApiCalls().get(0).getEndpoint());
+        assertEquals("/api/vehiclestate", result.getApiCalls().get(1).getEndpoint());
+        assertEquals("/api/rakelstate", result.getApiCalls().get(2).getEndpoint());
+    }
+
+        @Test
+        void analyzeMany_SortsMergedScenarioChronologicallyBeforeGrouping() throws Exception {
+                LogAnalysisResult result = logAnalysisService.analyzeMany(
+                                "Folder upload: crf22 (2 filer)",
+                                List.of(
+                                                new LogAnalysisService.NamedLogFile(
+                                                                "crf22/amPHIIntegration.1.out.log",
+                                                                String.join("\n",
+                                                                                "2026-03-06T17:10:00.000+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/vehiclestate, client=1]",
+                                                                                "Method EvamController.createNew(..) has returned VehicleState(id=1, timestamp=2026-03-06T16:10:00.000, vehicleStatus=VehicleStatus(id=null, name=Avf Hamtplats, event=EVENT_EXIT_SITE, successorName=Ank Dest, isStartStatus=false, isEndStatus=false, categoryType=STATUS_MISSION, categoryName=mission), activeCaseFullId=18:17869359:2, vehicleLocation=Location(latitude=59.20189240674485, longitude=17.640825396998476, timestamp=1772812779234))")
+                                                                                .getBytes(StandardCharsets.UTF_8)),
+                                                new LogAnalysisService.NamedLogFile(
+                                                                "crf22/amPHIIntegration.2.out.log",
+                                                                String.join("\n",
+                                                                                "2026-03-06T17:00:00.000+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/operations, client=1]",
+                                                                                "2026-03-06T17:00:00.001+01:00 DEBUG 1 --- [nio-8443-exec-1] c.d.a.controller.EvamController          : POST /operations: {\"operationID\":\"2\",\"callCenterId\":\"18\",\"caseFolderId\":\"17869359\"}")
+                                                                                .getBytes(StandardCharsets.UTF_8))));
+
+                assertEquals("/api/operations", result.getApiCalls().get(0).getEndpoint());
+                assertEquals("/api/vehiclestate", result.getApiCalls().get(1).getEndpoint());
+                assertEquals(1, result.getApiCalls().get(0).getSequence());
+                assertEquals(2, result.getApiCalls().get(1).getSequence());
+                assertTrue(result.getOperationGroups().get(0).getFirstRequestTimestamp().startsWith("2026-03-06T17:00:00"));
+                assertTrue(result.getOperationGroups().get(0).getLastRequestTimestamp().startsWith("2026-03-06T17:10:00"));
+        }
+
+    @Test
+    void analyze_GroupsOperationsUsingOnlyVehicleStateActiveCaseFullId() throws Exception {
+        String log = String.join("\n",
+                "2026-03-06T16:58:53.280+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/operations, client=1]",
+                "2026-03-06T16:58:53.281+01:00 DEBUG 1 --- [nio-8443-exec-1] c.d.a.controller.EvamController          : POST /operations: {\"operationID\":\"2\",\"callCenterId\":\"18\",\"caseFolderId\":\"17869359\"}",
+                "2026-03-06T16:58:54.280+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/vehiclestate, client=1]",
+                "Method EvamController.createNew(..) has returned VehicleState(id=1, timestamp=2026-03-06T15:59:39.241, vehicleStatus=VehicleStatus(id=null, name=Avf Hamtplats, event=EVENT_EXIT_SITE, successorName=Ank Dest, isStartStatus=false, isEndStatus=false, categoryType=STATUS_MISSION, categoryName=mission), activeCaseFullId=18:17869921:1, vehicleLocation=Location(latitude=59.20189240674485, longitude=17.640825396998476, timestamp=1772812779234))",
+                "2026-03-06T16:58:55.280+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/rakelstate, client=1]",
+                "Method EvamController.createNew(..) has returned RakelState(id=1, unitId=null, msisdn=3306540, issi=306540, gssi=09338491)");
+
+        LogAnalysisResult result = logAnalysisService.analyze("sample.log", log.getBytes(StandardCharsets.UTF_8));
+
+        assertEquals(1, result.getOperationGroups().size());
+        assertEquals("18:17869921:1", result.getOperationGroups().get(0).getOperationKey());
+        assertEquals("18:17869921:1", result.getApiCalls().get(0).getOperationKey());
+        assertEquals("18:17869921:1", result.getApiCalls().get(1).getOperationKey());
+        assertEquals("18:17869921:1", result.getApiCalls().get(2).getOperationKey());
     }
 }

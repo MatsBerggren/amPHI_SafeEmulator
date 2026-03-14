@@ -1,9 +1,22 @@
 {
   "1" : {
     "id" : "1",
-    "timestamp" : null,
-    "vehicleStatus" : null,
-    "activeCaseFullId" : null,
-    "vehicleLocation" : null
+    "timestamp" : "2026-03-06T18:03:50.838Z",
+    "vehicleStatus" : {
+      "id" : null,
+      "name" : "Klar Uppdrag",
+      "event" : "EVENT_EXIT_HOSPITAL",
+      "successorName" : "Disponibel Station",
+      "isStartStatus" : false,
+      "isEndStatus" : true,
+      "categoryType" : "STATUS_MISSION",
+      "categoryName" : "mission"
+    },
+    "activeCaseFullId" : "18:17869921:1",
+    "vehicleLocation" : {
+      "latitude" : 59.31596355496977,
+      "longitude" : 18.089882127151494,
+      "timestamp" : "1772820230199"
+    }
   }
 }

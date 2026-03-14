@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.ApplicationArguments;
@@ -21,7 +22,10 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import com.dedalus.amphi_integration.model.OperationDistance;
+import com.dedalus.amphi_integration.model.evam.VehicleState;
 import com.dedalus.amphi_integration.model.evam.VehicleStatus;
+import com.dedalus.amphi_integration.repository.EvamVehicleStateRepository;
 import com.dedalus.amphi_integration.repository.EvamVehicleStatusRepository;
 import com.dedalus.amphi_integration.service.impl.EvamScenarioReplayResult;
 import com.dedalus.amphi_integration.service.impl.EvamScenarioReplayService;
@@ -45,6 +49,7 @@ public class OperationDistanceGuiServer implements DisposableBean {
 
     private final ApplicationArguments applicationArguments;
     private final OperationDistanceRepository operationDistanceRepository;
+    private final EvamVehicleStateRepository evamVehicleStateRepository;
     private final EvamVehicleStatusRepository evamVehicleStatusRepository;
     private final EvamScenarioReplayService evamScenarioReplayService;
 
@@ -52,10 +57,12 @@ public class OperationDistanceGuiServer implements DisposableBean {
 
     public OperationDistanceGuiServer(ApplicationArguments applicationArguments,
             OperationDistanceRepository operationDistanceRepository,
+            EvamVehicleStateRepository evamVehicleStateRepository,
             EvamVehicleStatusRepository evamVehicleStatusRepository,
             EvamScenarioReplayService evamScenarioReplayService) {
         this.applicationArguments = applicationArguments;
         this.operationDistanceRepository = operationDistanceRepository;
+        this.evamVehicleStateRepository = evamVehicleStateRepository;
         this.evamVehicleStatusRepository = evamVehicleStatusRepository;
         this.evamScenarioReplayService = evamScenarioReplayService;
     }
@@ -91,7 +98,9 @@ public class OperationDistanceGuiServer implements DisposableBean {
                 exchange,
                 "application/json; charset=UTF-8",
             OperationDistanceMapLauncher.buildPointsJson(
-                operationDistanceRepository.findAll(),
+                filterOperationDistancesForCurrentVehicleState(
+                    operationDistanceRepository.findAll(),
+                    evamVehicleStateRepository.findById("1").orElse(null)),
                 evamVehicleStatusRepository.findAll())));
         server.createContext("/api/operation-distance/clear", this::clearOperationDistance);
         server.createContext("/api/operation-scenarios", this::listOperationScenarios);
@@ -263,6 +272,24 @@ public class OperationDistanceGuiServer implements DisposableBean {
         exchange.getResponseBody().write(body);
         exchange.getResponseBody().flush();
         exchange.close();
+    }
+
+    static List<OperationDistance> filterOperationDistancesForCurrentVehicleState(
+            List<OperationDistance> entries,
+            VehicleState currentVehicleState) {
+        if (entries == null || entries.isEmpty() || currentVehicleState == null) {
+            return List.of();
+        }
+
+        String activeCaseFullId = currentVehicleState.getActiveCaseFullId();
+        if (activeCaseFullId == null || activeCaseFullId.isBlank()) {
+            return List.of();
+        }
+
+        return entries.stream()
+                .filter(Objects::nonNull)
+                .filter(entry -> activeCaseFullId.equals(entry.getOperationID()))
+                .toList();
     }
 
     private record OperationScenarioItem(

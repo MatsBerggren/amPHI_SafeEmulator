@@ -61,6 +61,9 @@ class OperationDistanceMapLauncherTest {
                 assertThat(html).contains("/api/replay-event");
                 assertThat(html).contains("/api/operation-scenarios");
                 assertThat(html).contains("/api/operation-distance/clear");
+                assertThat(html).contains("class=\"entry-link\"");
+                assertThat(html).contains("function selectPoint(pointIndex");
+                assertThat(html).contains("state.stateChangeMarkerMap.set(point.index, marker)");
     }
 
     @Test

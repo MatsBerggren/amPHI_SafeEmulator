@@ -1,26 +1,6 @@
 {
   "1" : {
     "id" : "1",
-    "name" : "Kvittera",
-    "event" : "EVENT_OPERATION_CONFIRMED",
-    "successorName" : "Ank Hämtplats",
-    "isStartStatus" : true,
-    "isEndStatus" : false,
-    "categoryType" : "STATUS_MISSION",
-    "categoryName" : "mission"
-  },
-  "2" : {
-    "id" : "2",
-    "name" : "Ank Hämtplats",
-    "event" : "EVENT_AT_SITE",
-    "successorName" : "Avf Hämtplats",
-    "isStartStatus" : false,
-    "isEndStatus" : false,
-    "categoryType" : "STATUS_MISSION",
-    "categoryName" : "mission"
-  },
-  "3" : {
-    "id" : "3",
     "name" : "Avf Hämtplats",
     "event" : "EVENT_EXIT_SITE",
     "successorName" : "Ank Dest",
@@ -29,8 +9,8 @@
     "categoryType" : "STATUS_MISSION",
     "categoryName" : "mission"
   },
-  "4" : {
-    "id" : "4",
+  "2" : {
+    "id" : "2",
     "name" : "Ank Dest",
     "event" : "EVENT_AT_HOSPITAL",
     "successorName" : "Klar Uppdrag",
@@ -39,13 +19,33 @@
     "categoryType" : "STATUS_MISSION",
     "categoryName" : "mission"
   },
-  "5" : {
-    "id" : "5",
+  "3" : {
+    "id" : "3",
     "name" : "Klar Uppdrag",
     "event" : "EVENT_EXIT_HOSPITAL",
     "successorName" : "Disponibel Station",
     "isStartStatus" : false,
     "isEndStatus" : true,
+    "categoryType" : "STATUS_MISSION",
+    "categoryName" : "mission"
+  },
+  "4" : {
+    "id" : "4",
+    "name" : "Kvittera",
+    "event" : "EVENT_OPERATION_CONFIRMED",
+    "successorName" : "Ank Hämtplats",
+    "isStartStatus" : true,
+    "isEndStatus" : false,
+    "categoryType" : "STATUS_MISSION",
+    "categoryName" : "mission"
+  },
+  "5" : {
+    "id" : "5",
+    "name" : "Ank Hämtplats",
+    "event" : "EVENT_AT_SITE",
+    "successorName" : "Avf Hämtplats",
+    "isStartStatus" : false,
+    "isEndStatus" : false,
     "categoryType" : "STATUS_MISSION",
     "categoryName" : "mission"
   }

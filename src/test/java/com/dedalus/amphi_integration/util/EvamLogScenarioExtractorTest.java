@@ -2,9 +2,11 @@ package com.dedalus.amphi_integration.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dedalus.amphi_integration.AppConfig;
 import com.google.gson.Gson;
+import java.time.OffsetDateTime;
 import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -148,5 +150,44 @@ class EvamLogScenarioExtractorTest {
         assertEquals("18:17869359:2", json.get("activeCaseFullId"));
         assertNotNull(json.get("vehicleStatus"));
         assertNotNull(json.get("vehicleLocation"));
+    }
+
+    @Test
+    void extract_InterpolatesMissingTimestampsBetweenKnownEventsAndSortsChronologically() {
+        List<String> lines = List.of(
+                "2026-03-06T17:00:00.000+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/vehiclestate, client=1]",
+                "Method EvamController.createNew(..) has returned VehicleState(id=1, timestamp=2026-03-06T16:00:00.000, vehicleStatus=VehicleStatus(id=null, name=Start, event=EVENT_START, successorName=Next, isStartStatus=true, isEndStatus=false, categoryType=STATUS_MISSION, categoryName=mission), activeCaseFullId=18:100:1, vehicleLocation=Location(latitude=59.1, longitude=17.1, timestamp=1772812779234))",
+            "invalid-timestamp DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/operations, client=1]",
+                "Method EvamController.createNew(..) has returned null",
+                "2026-03-06T17:10:00.000+01:00 DEBUG 1 --- [nio-8443-exec-2] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/operationlist, client=1]",
+                "Method EvamController.createNew(..) has returned null"
+        );
+
+        EvamLogScenario scenario = new EvamLogScenarioExtractor(gson).extract(Path.of("scenario.log"), lines);
+
+        assertEquals(3, scenario.getEvents().size());
+        OffsetDateTime first = OffsetDateTime.parse(scenario.getEvents().get(0).getRequestTimestamp());
+        OffsetDateTime second = OffsetDateTime.parse(scenario.getEvents().get(1).getRequestTimestamp());
+        OffsetDateTime third = OffsetDateTime.parse(scenario.getEvents().get(2).getRequestTimestamp());
+
+        assertTrue(first.isBefore(second));
+        assertTrue(second.isBefore(third));
+        assertEquals(1, scenario.getEvents().get(0).getSequence());
+        assertEquals(2, scenario.getEvents().get(1).getSequence());
+        assertEquals(3, scenario.getEvents().get(2).getSequence());
+    }
+
+    @Test
+    void extract_IgnoresGetAssignmentsRequests() {
+        List<String> lines = List.of(
+                "2026-03-06T17:00:00.000+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [GET /api/assignments, client=1]",
+                "2026-03-06T17:00:01.000+01:00 DEBUG 1 --- [nio-8443-exec-1] o.s.w.f.CommonsRequestLoggingFilter      : Before request [POST /api/vehiclestate, client=1]",
+                "Method EvamController.createNew(..) has returned VehicleState(id=1, timestamp=2026-03-06T16:00:00.000, vehicleStatus=VehicleStatus(id=null, name=Start, event=EVENT_START, successorName=Next, isStartStatus=true, isEndStatus=false, categoryType=STATUS_MISSION, categoryName=mission), activeCaseFullId=18:100:1, vehicleLocation=Location(latitude=59.1, longitude=17.1, timestamp=1772812779234))"
+        );
+
+        EvamLogScenario scenario = new EvamLogScenarioExtractor(gson).extract(Path.of("scenario.log"), lines);
+
+        assertEquals(1, scenario.getEvents().size());
+        assertEquals("/api/vehiclestate", scenario.getEvents().get(0).getEndpoint());
     }
 }

@@ -7,7 +7,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -94,6 +96,7 @@ class EvamVehicleStateServiceImplTest {
         OperationDistance savedDistance = captor.getValue();
 
         assertNotNull(savedDistance);
+        assertEquals(LocalDateTime.of(2026, 3, 7, 10, 0, 0), savedDistance.getTimestamp());
         assertEquals(800.0, savedDistance.getPublishedAssignmentDistance());
         assertEquals("2", savedDistance.getStateID());
     }
@@ -136,6 +139,7 @@ class EvamVehicleStateServiceImplTest {
         OperationDistance savedDistance = captor.getValue();
 
         assertNotNull(savedDistance);
+        assertEquals(LocalDateTime.of(2026, 3, 7, 10, 1, 0), savedDistance.getTimestamp());
         assertEquals(savedDistance.getAssignmentDistance(), savedDistance.getPublishedAssignmentDistance());
         assertEquals("3", savedDistance.getStateID());
     }
@@ -180,7 +184,40 @@ class EvamVehicleStateServiceImplTest {
         OperationDistance savedDistance = captor.getValue();
 
         assertNotNull(savedDistance);
+        assertEquals(LocalDateTime.of(2026, 3, 7, 10, 0, 0), savedDistance.getTimestamp());
         assertEquals("1", savedDistance.getStateID());
         assertEquals(savedDistance.getAssignmentDistance(), savedDistance.getPublishedAssignmentDistance());
+    }
+
+    @Test
+    void updateVehicleState_WhenTopLevelTimestampIsMissing_UsesLocationTimestamp() {
+        VehicleState incomingState = VehicleState.builder()
+                .activeCaseFullId("1:1234567891:9")
+                .vehicleStatus(VehicleStatus.builder().name("På väg").build())
+                .vehicleLocation(Location.builder()
+                        .latitude(57.7005)
+                        .longitude(14.1005)
+                        .timestamp("1772866800000")
+                        .build())
+                .build();
+
+        when(amphiStateEntryRepository.findFirstByOrderByTimeDesc()).thenReturn(Optional.empty());
+        when(evamVehicleStatusRepository.findByName("På väg")).thenReturn(VehicleStatus.builder().id("2").name("På väg").build());
+        when(evamVehicleStateRepository.findFirstByOrderByTimestampDesc()).thenReturn(Optional.of(
+                VehicleState.builder()
+                        .id("1")
+                        .vehicleLocation(Location.builder().latitude(57.7000).longitude(14.1000).build())
+                        .build()));
+        when(operationDistanceRepository.findFirstByOrderByTimestampDesc()).thenReturn(Optional.empty());
+        when(evamVehicleStateRepository.save(any(VehicleState.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        evamVehicleStateService.updateVehicleState(gson.toJson(incomingState));
+
+        ArgumentCaptor<OperationDistance> captor = ArgumentCaptor.forClass(OperationDistance.class);
+        verify(operationDistanceRepository).save(captor.capture());
+
+        assertEquals(
+                LocalDateTime.ofInstant(Instant.ofEpochMilli(1772866800000L), ZoneId.systemDefault()),
+                captor.getValue().getTimestamp());
     }
 }

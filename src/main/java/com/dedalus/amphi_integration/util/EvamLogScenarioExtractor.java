@@ -13,11 +13,15 @@ import java.nio.charset.MalformedInputException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Deque;
+import java.util.Set;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +30,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class EvamLogScenarioExtractor {
+
+    private static final Set<String> IGNORED_ENDPOINTS = Set.of(
+        "/api/assignments",
+        "/api/assignments/");
 
     private static final Pattern BEFORE_REQUEST = Pattern.compile(
             "^(\\S+)\\s+DEBUG.*Before request \\[(\\w+) (/api/[a-z]+), client=.*$"
@@ -57,10 +65,14 @@ public class EvamLogScenarioExtractor {
         for (String line : lines) {
             Matcher beforeMatcher = BEFORE_REQUEST.matcher(line);
             if (beforeMatcher.matches()) {
+                String endpoint = beforeMatcher.group(3);
+                if (shouldIgnoreEndpoint(endpoint)) {
+                    continue;
+                }
                 PendingEvent pending = new PendingEvent();
                 pending.requestTimestamp = beforeMatcher.group(1);
                 pending.method = beforeMatcher.group(2);
-                pending.endpoint = beforeMatcher.group(3);
+                pending.endpoint = endpoint;
                 pendingByEndpoint.computeIfAbsent(pending.endpoint, key -> new ArrayDeque<>()).addLast(pending);
                 continue;
             }
@@ -133,6 +145,9 @@ public class EvamLogScenarioExtractor {
 
         flushPending(pendingByEndpoint, events);
         inferOperationPayloads(events);
+        interpolateMissingTimestamps(events);
+        sortEventsByTimestamp(events);
+        resequence(events);
 
         return EvamLogScenario.builder()
                 .sourceLog(sourceLog.toString())
@@ -141,6 +156,10 @@ public class EvamLogScenarioExtractor {
                 .endpointCounts(countByEndpoint(events))
                 .qualityCounts(countByQuality(events))
                 .build();
+    }
+
+    private boolean shouldIgnoreEndpoint(String endpoint) {
+        return endpoint != null && IGNORED_ENDPOINTS.contains(endpoint);
     }
 
     public void writeScenario(Path logPath, Path outputPath) throws IOException {
@@ -329,6 +348,88 @@ public class EvamLogScenarioExtractor {
             return timestamp == null ? null : OffsetDateTime.parse(timestamp);
         } catch (RuntimeException exception) {
             return null;
+        }
+    }
+
+    private void interpolateMissingTimestamps(List<EvamLogScenarioEvent> events) {
+        int index = 0;
+        while (index < events.size()) {
+            if (parseTimestamp(events.get(index).getRequestTimestamp()) != null) {
+                index += 1;
+                continue;
+            }
+
+            int missingStart = index;
+            while (index < events.size() && parseTimestamp(events.get(index).getRequestTimestamp()) == null) {
+                index += 1;
+            }
+
+            int missingEnd = index - 1;
+            OffsetDateTime previousKnown = missingStart > 0
+                    ? parseTimestamp(events.get(missingStart - 1).getRequestTimestamp())
+                    : null;
+            OffsetDateTime nextKnown = index < events.size()
+                    ? parseTimestamp(events.get(index).getRequestTimestamp())
+                    : null;
+
+            assignInterpolatedTimestamps(events, missingStart, missingEnd, previousKnown, nextKnown);
+        }
+    }
+
+    private void assignInterpolatedTimestamps(
+            List<EvamLogScenarioEvent> events,
+            int missingStart,
+            int missingEnd,
+            OffsetDateTime previousKnown,
+            OffsetDateTime nextKnown) {
+        int missingCount = missingEnd - missingStart + 1;
+        if (missingCount < 1) {
+            return;
+        }
+
+        if (previousKnown != null && nextKnown != null && previousKnown.isBefore(nextKnown)) {
+            long startMillis = previousKnown.toInstant().toEpochMilli();
+            long endMillis = nextKnown.toInstant().toEpochMilli();
+            long gapMillis = Math.max(endMillis - startMillis, missingCount + 1L);
+
+            for (int offset = 0; offset < missingCount; offset++) {
+                long assignedMillis = startMillis + ((offset + 1L) * gapMillis) / (missingCount + 1L);
+                events.get(missingStart + offset).setRequestTimestamp(formatEpochMillis(assignedMillis));
+            }
+            return;
+        }
+
+        if (previousKnown != null) {
+            long baseMillis = previousKnown.toInstant().toEpochMilli();
+            for (int offset = 0; offset < missingCount; offset++) {
+                events.get(missingStart + offset).setRequestTimestamp(formatEpochMillis(baseMillis + offset + 1L));
+            }
+            return;
+        }
+
+        if (nextKnown != null) {
+            long baseMillis = nextKnown.toInstant().toEpochMilli();
+            for (int offset = missingCount - 1; offset >= 0; offset--) {
+                int distanceFromNext = missingCount - offset;
+                events.get(missingStart + offset).setRequestTimestamp(formatEpochMillis(baseMillis - distanceFromNext));
+            }
+        }
+    }
+
+    private String formatEpochMillis(long epochMillis) {
+        return Instant.ofEpochMilli(epochMillis).atOffset(ZoneOffset.UTC).toString();
+    }
+
+    private void sortEventsByTimestamp(List<EvamLogScenarioEvent> events) {
+        events.sort(Comparator
+                .comparing((EvamLogScenarioEvent event) -> parseTimestamp(event.getRequestTimestamp()),
+                        Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(event -> event.getSequence() == null ? Integer.MAX_VALUE : event.getSequence()));
+    }
+
+    private void resequence(List<EvamLogScenarioEvent> events) {
+        for (int index = 0; index < events.size(); index++) {
+            events.get(index).setSequence(index + 1);
         }
     }
 

@@ -8,7 +8,6 @@ import com.dedalus.amphi_integration.util.EvamLogScenario;
 import com.dedalus.amphi_integration.util.EvamLogScenarioEvent;
 import com.dedalus.amphi_integration.util.EvamLogScenarioExtractor;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.io.IOException;
@@ -23,6 +22,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -38,6 +39,11 @@ public class LogAnalysisService {
             "/api/vehiclestatus",
             "/api/triplocationhistory",
             "/api/methanereport");
+        private static final Set<String> IGNORED_ENDPOINTS = Set.of(
+            "/api/assignments",
+            "/api/assignments/");
+    private static final Pattern TRAILING_NUMBER = Pattern.compile("(\\d+)(?=\\D*$)");
+    private static final String VEHICLE_STATE_ENDPOINT = "/api/vehiclestate";
 
     private final Gson gson;
 
@@ -103,6 +109,7 @@ public class LogAnalysisService {
         }
 
         public LogAnalysisResult analyzeScenario(EvamLogScenario scenario, ProgressListener progressListener) {
+        scenario = sortScenarioChronologically(scenario);
         progressListener.onProgress(new ProgressUpdate(
             "normalizing",
             "Normaliserar " + scenarioEventCount(scenario) + " identifierade händelser till replaybara anrop...",
@@ -110,6 +117,7 @@ public class LogAnalysisService {
             null,
             null));
         List<ReplayApiCall> apiCalls = scenario.getEvents().stream()
+            .filter(event -> !shouldIgnoreEndpoint(event.getEndpoint()))
                 .map(this::toReplayApiCall)
                 .toList();
         List<ReplayApiCall> normalizedCalls = normalizeCalls(apiCalls);
@@ -144,13 +152,14 @@ public class LogAnalysisService {
     public EvamLogScenario mergeScenarios(String sourceLog, List<NamedLogFile> logFiles, ProgressListener progressListener)
             throws IOException {
         EvamLogScenario mergedScenario = createScenarioShell(sourceLog);
-        for (int index = 0; index < logFiles.size(); index++) {
-            NamedLogFile logFile = logFiles.get(index);
+        List<NamedLogFile> orderedLogFiles = sortLogFiles(logFiles);
+        for (int index = 0; index < orderedLogFiles.size(); index++) {
+            NamedLogFile logFile = orderedLogFiles.get(index);
             progressListener.onProgress(new ProgressUpdate(
                     "extracting",
-                    "Tolkar fil " + (index + 1) + " av " + logFiles.size() + ": " + logFile.path(),
+                    "Tolkar fil " + (index + 1) + " av " + orderedLogFiles.size() + ": " + logFile.path(),
                     index,
-                    logFiles.size(),
+                    orderedLogFiles.size(),
                     logFile.path()));
                 EvamLogScenario extractedScenario = extractScenario(logFile.path(), logFile.content());
                 mergedScenario = appendExtractedScenario(mergedScenario, logFile.path(), extractedScenario);
@@ -160,11 +169,35 @@ public class LogAnalysisService {
                         + scenarioEventCount(extractedScenario) + " händelser hittade i filen, "
                         + scenarioEventCount(mergedScenario) + " totalt.",
                     index + 1,
-                    logFiles.size(),
+                    orderedLogFiles.size(),
                     logFile.path()));
         }
 
         return mergedScenario;
+    }
+
+    private List<NamedLogFile> sortLogFiles(List<NamedLogFile> logFiles) {
+        return logFiles.stream()
+                .sorted(Comparator
+                        .comparingInt((NamedLogFile file) -> trailingNumber(file.path()))
+                        .thenComparing(NamedLogFile::path, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private int trailingNumber(String path) {
+        if (path == null || path.isBlank()) {
+            return Integer.MAX_VALUE;
+        }
+
+        Matcher matcher = TRAILING_NUMBER.matcher(path);
+        if (matcher.find()) {
+            try {
+                return Integer.parseInt(matcher.group(1));
+            } catch (NumberFormatException exception) {
+                return Integer.MAX_VALUE;
+            }
+        }
+        return Integer.MAX_VALUE;
     }
 
     private EvamLogScenario appendExtractedScenario(
@@ -205,6 +238,30 @@ public class LogAnalysisService {
                 .build();
     }
 
+    private EvamLogScenario sortScenarioChronologically(EvamLogScenario scenario) {
+        if (scenario == null || scenario.getEvents() == null || scenario.getEvents().isEmpty()) {
+            return scenario;
+        }
+
+        List<EvamLogScenarioEvent> sortedEvents = new ArrayList<>(scenario.getEvents());
+        sortedEvents.sort(Comparator
+                .comparing((EvamLogScenarioEvent event) -> parseTimestamp(event.getRequestTimestamp()),
+                        Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(event -> event.getSequence() == null ? Integer.MAX_VALUE : event.getSequence()));
+
+        for (int index = 0; index < sortedEvents.size(); index++) {
+            sortedEvents.get(index).setSequence(index + 1);
+        }
+
+        return EvamLogScenario.builder()
+                .sourceLog(scenario.getSourceLog())
+                .generatedAt(scenario.getGeneratedAt())
+                .events(sortedEvents)
+                .endpointCounts(scenario.getEndpointCounts())
+                .qualityCounts(scenario.getQualityCounts())
+                .build();
+    }
+
     private String prefixNote(String filePath, String note) {
         String prefix = "Source file: " + filePath;
         if (note == null || note.isBlank()) {
@@ -233,12 +290,16 @@ public class LogAnalysisService {
                 .payloadType(event.getPayloadType())
                 .extractionQuality(event.getExtractionQuality())
                 .replayable(replayable)
-                .operationKey(extractOperationKey(event.getPayloadJson()))
+                .operationKey(extractVehicleStateOperationKey(event))
                 .payloadJson(event.getPayloadJson())
                 .rawLogValue(event.getRawLogValue())
                 .note(event.getNote())
                 .replayCommand(replayable ? buildReplayCommand(event) : null)
                 .build();
+    }
+
+    private boolean shouldIgnoreEndpoint(String endpoint) {
+        return endpoint != null && IGNORED_ENDPOINTS.contains(endpoint);
     }
 
     private List<ReplayApiCall> normalizeCalls(List<ReplayApiCall> apiCalls) {
@@ -317,7 +378,9 @@ public class LogAnalysisService {
             }
 
             ReplayApiCall candidate = apiCalls.get(index);
-            if (candidate.getOperationKey() == null || candidate.getOperationKey().isBlank()) {
+            if (!VEHICLE_STATE_ENDPOINT.equals(candidate.getEndpoint())
+                    || candidate.getOperationKey() == null
+                    || candidate.getOperationKey().isBlank()) {
                 continue;
             }
 
@@ -419,20 +482,27 @@ public class LogAnalysisService {
                 .build();
     }
 
-    private String extractOperationKey(String payloadJson) {
+    private String extractVehicleStateOperationKey(EvamLogScenarioEvent event) {
+        if (event == null || !VEHICLE_STATE_ENDPOINT.equals(event.getEndpoint())) {
+            return null;
+        }
+        return extractVehicleStateOperationKey(event.getPayloadJson());
+    }
+
+    private String extractVehicleStateOperationKey(String payloadJson) {
         if (payloadJson == null || payloadJson.isBlank()) {
             return null;
         }
 
         try {
             JsonElement payload = gson.fromJson(payloadJson, JsonElement.class);
-            return extractOperationKey(payload);
+            return extractVehicleStateOperationKey(payload);
         } catch (RuntimeException exception) {
             return null;
         }
     }
 
-    private String extractOperationKey(JsonElement payload) {
+    private String extractVehicleStateOperationKey(JsonElement payload) {
         if (payload == null || payload.isJsonNull()) {
             return null;
         }
@@ -440,28 +510,6 @@ public class LogAnalysisService {
             JsonObject object = payload.getAsJsonObject();
             if (object.has("activeCaseFullId") && !object.get("activeCaseFullId").isJsonNull()) {
                 return object.get("activeCaseFullId").getAsString();
-            }
-            if (object.has("callCenterId") && object.has("caseFolderId") && object.has("operationID")) {
-                return object.get("callCenterId").getAsString() + ":"
-                        + object.get("caseFolderId").getAsString() + ":"
-                        + object.get("operationID").getAsString();
-            }
-            if (object.has("operationList") && object.get("operationList").isJsonArray()) {
-                JsonArray operationList = object.getAsJsonArray("operationList");
-                for (JsonElement entry : operationList) {
-                    String operationKey = extractOperationKey(entry);
-                    if (operationKey != null) {
-                        return operationKey;
-                    }
-                }
-            }
-        }
-        if (payload.isJsonArray()) {
-            for (JsonElement entry : payload.getAsJsonArray()) {
-                String operationKey = extractOperationKey(entry);
-                if (operationKey != null) {
-                    return operationKey;
-                }
             }
         }
         return null;

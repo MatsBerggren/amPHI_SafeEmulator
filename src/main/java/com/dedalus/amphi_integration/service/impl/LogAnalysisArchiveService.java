@@ -2,13 +2,11 @@ package com.dedalus.amphi_integration.service.impl;
 
 import com.dedalus.amphi_integration.model.loganalyzer.LogAnalysisResult;
 import com.dedalus.amphi_integration.model.loganalyzer.LogAnalysisSummary;
+import com.dedalus.amphi_integration.model.loganalyzer.ReplayApiCall;
 import com.dedalus.amphi_integration.util.EvamLogExtractionQuality;
 import com.dedalus.amphi_integration.util.EvamLogScenario;
 import com.dedalus.amphi_integration.util.EvamLogScenarioEvent;
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +37,7 @@ public class LogAnalysisArchiveService {
 
     public LogAnalysisResult save(LogAnalysisResult result) throws IOException {
         ensureArchiveDirectory();
+        sortScenario(result.getScenario());
 
         LogAnalysisSummary summary = result.getSummary();
         if (summary.getAnalysisId() == null || summary.getAnalysisId().isBlank()) {
@@ -99,7 +98,7 @@ public class LogAnalysisArchiveService {
         Path operationsDirectory = analysisDirectory.resolve(OPERATIONS_DIRECTORY);
         Files.createDirectories(operationsDirectory);
 
-        List<OperationScenarioSlice> slices = extractCompleteOperationScenarios(result.getScenario());
+        List<OperationScenarioSlice> slices = extractCompleteOperationScenarios(result);
         for (int index = 0; index < slices.size(); index++) {
             OperationScenarioSlice slice = slices.get(index);
             String fileName = String.format(
@@ -122,61 +121,52 @@ public class LogAnalysisArchiveService {
         summary.setNotes(notes);
     }
 
-    private List<OperationScenarioSlice> extractCompleteOperationScenarios(EvamLogScenario scenario) {
-        if (scenario == null || scenario.getEvents() == null || scenario.getEvents().isEmpty()) {
+    private List<OperationScenarioSlice> extractCompleteOperationScenarios(LogAnalysisResult result) {
+        if (result == null || result.getApiCalls() == null || result.getApiCalls().isEmpty()) {
             return List.of();
         }
 
-        List<OperationScenarioSlice> slices = new ArrayList<>();
-        List<EvamLogScenarioEvent> events = scenario.getEvents();
-        Integer activeStartIndex = null;
-        String activeOperationKey = null;
-
-        for (int index = 0; index < events.size(); index++) {
-            String operationKey = extractOperationKey(events.get(index).getPayloadJson());
+        Map<String, List<ReplayApiCall>> callsByOperationKey = new LinkedHashMap<>();
+        for (ReplayApiCall call : result.getApiCalls()) {
+            String operationKey = call.getOperationKey();
             if (operationKey == null || operationKey.isBlank()) {
                 continue;
             }
-
-            if (activeOperationKey == null) {
-                activeOperationKey = operationKey;
-                activeStartIndex = index;
-                continue;
-            }
-
-            if (!operationKey.equals(activeOperationKey)) {
-                slices.add(new OperationScenarioSlice(
-                        activeOperationKey,
-                        buildScenarioSlice(scenario, events.subList(activeStartIndex, index), activeOperationKey)));
-                activeOperationKey = operationKey;
-                activeStartIndex = index;
-            }
+            callsByOperationKey.computeIfAbsent(operationKey, ignored -> new ArrayList<>()).add(call);
         }
 
-        return slices;
+        return callsByOperationKey.entrySet().stream()
+        .map(entry -> new OperationScenarioSlice(
+            entry.getKey(),
+                        buildScenarioSlice(result.getScenario(), entry.getValue(), entry.getKey())))
+        .toList();
     }
 
     private EvamLogScenario buildScenarioSlice(
             EvamLogScenario parentScenario,
-            List<EvamLogScenarioEvent> sliceEvents,
+            List<ReplayApiCall> sliceCalls,
             String operationKey) {
-        List<EvamLogScenarioEvent> exportedEvents = new ArrayList<>();
+        List<EvamLogScenarioEvent> exportedEvents = sliceCalls.stream()
+            .sorted(Comparator.comparing(
+                ReplayApiCall::getRequestTimestamp,
+                Comparator.nullsLast(String::compareTo)))
+            .map(call -> EvamLogScenarioEvent.builder()
+                .requestTimestamp(call.getRequestTimestamp())
+                .method(call.getMethod())
+                .endpoint(call.getEndpoint())
+                .payloadType(call.getPayloadType())
+                .extractionQuality(call.getExtractionQuality())
+                .payloadJson(call.getPayloadJson())
+                .rawLogValue(call.getRawLogValue())
+                .note(call.getNote())
+                .build())
+            .toList();
         Map<String, Integer> endpointCounts = new LinkedHashMap<>();
         Map<String, Integer> qualityCounts = new LinkedHashMap<>();
 
         int sequence = 1;
-        for (EvamLogScenarioEvent event : sliceEvents) {
-            exportedEvents.add(EvamLogScenarioEvent.builder()
-                    .sequence(sequence++)
-                    .requestTimestamp(event.getRequestTimestamp())
-                    .method(event.getMethod())
-                    .endpoint(event.getEndpoint())
-                    .payloadType(event.getPayloadType())
-                    .extractionQuality(event.getExtractionQuality())
-                    .payloadJson(event.getPayloadJson())
-                    .rawLogValue(event.getRawLogValue())
-                    .note(event.getNote())
-                    .build());
+        for (EvamLogScenarioEvent event : exportedEvents) {
+            event.setSequence(sequence++);
             mergeCount(endpointCounts, event.getEndpoint());
             mergeCount(qualityCounts, event.getExtractionQuality() == null ? null : event.getExtractionQuality().name());
         }
@@ -197,55 +187,23 @@ public class LogAnalysisArchiveService {
         target.merge(key, 1, Integer::sum);
     }
 
-    private String extractOperationKey(String payloadJson) {
-        if (payloadJson == null || payloadJson.isBlank()) {
-            return null;
-        }
-
-        try {
-            return extractOperationKey(gson.fromJson(payloadJson, JsonElement.class));
-        } catch (RuntimeException exception) {
-            return null;
-        }
-    }
-
-    private String extractOperationKey(JsonElement payload) {
-        if (payload == null || payload.isJsonNull()) {
-            return null;
-        }
-        if (payload.isJsonObject()) {
-            JsonObject object = payload.getAsJsonObject();
-            if (object.has("activeCaseFullId") && !object.get("activeCaseFullId").isJsonNull()) {
-                return object.get("activeCaseFullId").getAsString();
-            }
-            if (object.has("callCenterId") && object.has("caseFolderId") && object.has("operationID")) {
-                return object.get("callCenterId").getAsString() + ":"
-                        + object.get("caseFolderId").getAsString() + ":"
-                        + object.get("operationID").getAsString();
-            }
-            if (object.has("operationList") && object.get("operationList").isJsonArray()) {
-                JsonArray operationList = object.getAsJsonArray("operationList");
-                for (JsonElement entry : operationList) {
-                    String operationKey = extractOperationKey(entry);
-                    if (operationKey != null) {
-                        return operationKey;
-                    }
-                }
-            }
-        }
-        if (payload.isJsonArray()) {
-            for (JsonElement entry : payload.getAsJsonArray()) {
-                String operationKey = extractOperationKey(entry);
-                if (operationKey != null) {
-                    return operationKey;
-                }
-            }
-        }
-        return null;
-    }
-
     private String sanitizeFileName(String value) {
         return value.replaceAll("[^a-zA-Z0-9._-]+", "_");
+    }
+
+    private void sortScenario(EvamLogScenario scenario) {
+        if (scenario == null || scenario.getEvents() == null) {
+            return;
+        }
+
+        List<EvamLogScenarioEvent> sortedEvents = new ArrayList<>(scenario.getEvents());
+        sortedEvents.sort(Comparator.comparing(
+                EvamLogScenarioEvent::getRequestTimestamp,
+                Comparator.nullsLast(String::compareTo)));
+        for (int index = 0; index < sortedEvents.size(); index++) {
+            sortedEvents.get(index).setSequence(index + 1);
+        }
+        scenario.setEvents(sortedEvents);
     }
 
     private record OperationScenarioSlice(String operationKey, EvamLogScenario scenario) {

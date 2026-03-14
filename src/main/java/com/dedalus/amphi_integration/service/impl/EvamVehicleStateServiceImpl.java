@@ -1,6 +1,8 @@
 package com.dedalus.amphi_integration.service.impl;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -177,7 +179,7 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
             }
 
             return OperationDistance.builder()
-                    .timestamp(LocalDateTime.now())
+                    .timestamp(resolveEventTimestamp(vehicleState))
                     .operationID(vehicleState.getActiveCaseFullId())
                     .distance(distance)
                     .assignmentDistance(totalAssignmentDistance)
@@ -189,7 +191,7 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
         }).orElseGet(() -> {
             double publishedAssignmentDistance = statusChanged ? distance : 0.0;
             return OperationDistance.builder()
-                    .timestamp(LocalDateTime.now())
+                    .timestamp(resolveEventTimestamp(vehicleState))
                     .operationID(vehicleState.getActiveCaseFullId())
                     .distance(distance)
                     .assignmentDistance(distance)
@@ -200,6 +202,32 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
                     .build();
         });
         operationDistanceRepository.save(operationDistance);
+    }
+
+    private LocalDateTime resolveEventTimestamp(VehicleState vehicleState) {
+        if (vehicleState == null) {
+            return LocalDateTime.now();
+        }
+
+        if (vehicleState.getTimestamp() != null) {
+            return vehicleState.getTimestamp();
+        }
+
+        if (vehicleState.getVehicleLocation() != null && vehicleState.getVehicleLocation().getTimestamp() != null) {
+            String locationTimestamp = vehicleState.getVehicleLocation().getTimestamp();
+            try {
+                long epochMillis = Long.parseLong(locationTimestamp);
+                return LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
+            } catch (NumberFormatException ignored) {
+                try {
+                    return OffsetDateTime.parse(locationTimestamp).toLocalDateTime();
+                } catch (RuntimeException ignoredAgain) {
+                    // fall through to now()
+                }
+            }
+        }
+
+        return LocalDateTime.now();
     }
 
     private void updateOperationState(String vehicleStatusId) {

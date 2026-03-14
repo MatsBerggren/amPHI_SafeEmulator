@@ -273,9 +273,15 @@ public final class OperationDistanceMapLauncher {
                     .entry {
                       padding: 14px 12px;
                       border-top: 1px solid var(--line);
+                      border-radius: 18px;
+                      transition: background 140ms ease, box-shadow 140ms ease;
                     }
                     .entry:first-child {
                       border-top: 0;
+                    }
+                    .entry.active {
+                      background: rgba(163, 58, 43, 0.08);
+                      box-shadow: inset 0 0 0 1px rgba(163, 58, 43, 0.18);
                     }
                     .entry-index {
                       display: inline-flex;
@@ -288,6 +294,26 @@ public final class OperationDistanceMapLauncher {
                       color: white;
                       font-size: 13px;
                       font-weight: 700;
+                    }
+                    .entry-time {
+                      margin: 10px 0 4px;
+                    }
+                    .entry-link {
+                      padding: 0;
+                      border: 0;
+                      background: none;
+                      color: var(--accent);
+                      font: inherit;
+                      font-weight: 700;
+                      text-align: left;
+                      cursor: pointer;
+                      text-decoration: underline;
+                      text-underline-offset: 2px;
+                    }
+                    .entry-link:hover,
+                    .entry-link:focus-visible {
+                      color: #7d2418;
+                      outline: none;
                     }
                     .entry-title {
                       margin: 10px 0 4px;
@@ -414,6 +440,8 @@ public final class OperationDistanceMapLauncher {
                       map: null,
                       line: null,
                       stateChangeMarkers: [],
+                      stateChangeMarkerMap: new Map(),
+                      selectedPointIndex: null,
                       signature: '',
                       replayList: [],
                       replayScenario: null,
@@ -706,6 +734,51 @@ public final class OperationDistanceMapLauncher {
                       }
                       state.stateChangeMarkers.forEach((marker) => state.map.removeLayer(marker));
                       state.stateChangeMarkers = [];
+                      state.stateChangeMarkerMap = new Map();
+                    }
+
+                    function buildMarkerIcon(point, isActive) {
+                      return L.divIcon({
+                        className: 'state-change-flag',
+                        html: buildFlagMarkup(point, isActive),
+                        iconSize: isActive ? [24, 24] : [20, 20],
+                        iconAnchor: isActive ? [8, 20] : [6, 18]
+                      });
+                    }
+
+                    function updateMarkerSelection() {
+                      state.stateChangeMarkers.forEach((marker) => {
+                        const point = marker.pointData;
+                        const isActive = point?.index === state.selectedPointIndex;
+                        marker.setIcon(buildMarkerIcon(point, isActive));
+                      });
+                    }
+
+                    function updateListSelection() {
+                      const entries = entryList.querySelectorAll('.entry');
+                      entries.forEach((entry) => {
+                        const isActive = Number(entry.dataset.pointIndex) === state.selectedPointIndex;
+                        entry.classList.toggle('active', isActive);
+                      });
+                    }
+
+                    function selectPoint(pointIndex, options = {}) {
+                      state.selectedPointIndex = pointIndex;
+                      updateListSelection();
+                      updateMarkerSelection();
+
+                      const marker = state.stateChangeMarkerMap.get(pointIndex);
+                      if (!marker || !state.map) {
+                        return;
+                      }
+
+                      if (options.scrollList !== false) {
+                        const entry = entryList.querySelector(`.entry[data-point-index="${pointIndex}"]`);
+                        entry?.scrollIntoView({ block: 'nearest', behavior: options.instant ? 'auto' : 'smooth' });
+                      }
+
+                      state.map.panTo(marker.getLatLng(), { animate: !options.instant });
+                      marker.openPopup();
                     }
 
                     function findStateChanges(points) {
@@ -733,12 +806,14 @@ public final class OperationDistanceMapLauncher {
                       stateChanges.forEach((point) => {
                         const item = document.createElement('article');
                         item.className = 'entry';
+                        item.dataset.pointIndex = String(point.index);
                         item.innerHTML = `
                           <div class="entry-index">${point.index}</div>
-                          <div class="entry-title">${point.timestampLabel}</div>
+                          <div class="entry-time"><button class="entry-link" type="button" data-point-index="${point.index}">${point.timestampLabel}</button></div>
                           <p class="entry-copy">Lat ${point.latitude.toFixed(6)}, Lon ${point.longitude.toFixed(6)}</p>
                           <p class="entry-copy">${point.stateName || ('State ' + point.stateId)} • Assignment ${point.assignmentDistanceLabel} m</p>
                         `;
+                        item.querySelector('.entry-link')?.addEventListener('click', () => selectPoint(point.index));
                         entryList.appendChild(item);
                       });
 
@@ -753,6 +828,10 @@ public final class OperationDistanceMapLauncher {
                       emptyState.classList.remove('visible');
                       const map = ensureMap();
                       clearMap();
+                      const availablePointIndexes = new Set(stateChanges.map((point) => point.index));
+                      if (!availablePointIndexes.has(state.selectedPointIndex)) {
+                        state.selectedPointIndex = stateChanges.length ? stateChanges[stateChanges.length - 1].index : null;
+                      }
 
                       const latLngs = points.map((point) => [point.latitude, point.longitude]);
                       state.line = L.polyline(latLngs, {
@@ -761,21 +840,24 @@ public final class OperationDistanceMapLauncher {
                         opacity: 0.75
                       }).addTo(map);
 
-                      state.stateChangeMarkers = stateChanges.map((point) => L.marker([point.latitude, point.longitude], {
-                        icon: L.divIcon({
-                          className: 'state-change-flag',
-                          html: buildFlagMarkup(point),
-                          iconSize: [20, 20],
-                          iconAnchor: [6, 18]
-                        })
-                      }).bindPopup(`
+                      state.stateChangeMarkers = stateChanges.map((point) => {
+                        const marker = L.marker([point.latitude, point.longitude], {
+                          icon: buildMarkerIcon(point, point.index === state.selectedPointIndex)
+                        }).bindPopup(`
                         <strong>Statusbyte</strong><br>
                         Tid: ${point.timestampLabel}<br>
                         Status: ${point.stateName || ('State ' + point.stateId)}<br>
                         Assignment: ${point.assignmentDistanceLabel} m
-                      `).addTo(map));
+                      `).addTo(map);
+                        marker.pointData = point;
+                        marker.on('click', () => selectPoint(point.index, { scrollList: true }));
+                        state.stateChangeMarkerMap.set(point.index, marker);
+                        return marker;
+                      });
 
                       map.fitBounds(state.line.getBounds(), { padding: [32, 32] });
+                      updateListSelection();
+                      updateMarkerSelection();
                     }
 
                     function statusFlagColor(point) {
@@ -795,11 +877,12 @@ public final class OperationDistanceMapLauncher {
                       return '#7d2418';
                     }
 
-                    function buildFlagMarkup(point) {
+                    function buildFlagMarkup(point, isActive) {
                       const color = statusFlagColor(point);
                       const title = escapeHtml(point.stateName || ('State ' + point.stateId));
+                      const ring = isActive ? 'box-shadow:0 0 0 3px rgba(163,58,43,0.24);border-radius:999px;' : '';
                       return `
-                        <div title="${title}" style="position:relative;width:18px;height:18px;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.18));">
+                        <div title="${title}" style="position:relative;width:${isActive ? 22 : 18}px;height:${isActive ? 22 : 18}px;filter:drop-shadow(0 2px 2px rgba(0,0,0,0.18));${ring}">
                           <span style="position:absolute;left:3px;top:1px;width:2px;height:15px;background:#4e4e4e;border-radius:2px;"></span>
                           <span style="position:absolute;left:5px;top:1px;width:11px;height:8px;background:${color};clip-path:polygon(0 0,100% 18%,72% 100%,0 78%);border-radius:1px;"></span>
                         </div>`;
