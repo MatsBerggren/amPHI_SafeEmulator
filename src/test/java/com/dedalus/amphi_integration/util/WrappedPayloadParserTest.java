@@ -65,11 +65,11 @@ class WrappedPayloadParserTest {
     }
 
                 @Test
-                void parseObject_WithNumericFieldsAsStringAndNumber_ReturnsIntegers() {
+                void parseObject_WithHospitalNameAndNumericPriority_ReturnsParsedValues() {
                                 String wrapped = """
                                                                 {
                                                                         "operation": {
-                                                                                "selectedHospital": "42",
+                                                                                "selectedHospital": "Länssjukhuset Ryhov",
                                                                                 "selectedPriority": 1
                                                                         }
                                                                 }
@@ -78,7 +78,23 @@ class WrappedPayloadParserTest {
                                 Operation result = WrappedPayloadParser.parseObject(wrapped, gson, Operation.class, "operation");
 
                                 assertNotNull(result);
-                                assertEquals(42, result.getSelectedHospital());
+                                assertEquals("Länssjukhuset Ryhov", result.getSelectedHospital());
                                 assertEquals(1, result.getSelectedPriority());
+                }
+
+                @Test
+                void parseObject_WithNumericHospitalValue_ReturnsStringValue() {
+                                String wrapped = """
+                                                                {
+                                                                        "operation": {
+                                                                                "selectedHospital": 42
+                                                                        }
+                                                                }
+                                                                """;
+
+                                Operation result = WrappedPayloadParser.parseObject(wrapped, gson, Operation.class, "operation");
+
+                                assertNotNull(result);
+                                assertEquals("42", result.getSelectedHospital());
                 }
 }

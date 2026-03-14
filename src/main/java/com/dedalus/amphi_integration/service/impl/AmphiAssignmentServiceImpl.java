@@ -154,15 +154,36 @@ public class AmphiAssignmentServiceImpl implements AmphiAssignmentService {
     }
     
     private HospitalLocation getSelectedHospitalLocation(Operation operation) {
-        Integer selectedHospitalId = operation.getSelectedHospital();
-        if (selectedHospitalId == null || operation.getAvailableHospitalLocations() == null) {
+        String selectedHospital = operation.getSelectedHospital();
+        if (selectedHospital == null || selectedHospital.isBlank() || operation.getAvailableHospitalLocations() == null) {
             return null;
         }
 
+        Integer selectedHospitalId = parseSelectedHospitalId(selectedHospital);
+        if (selectedHospitalId != null) {
+            HospitalLocation selectedById = Arrays.stream(operation.getAvailableHospitalLocations())
+                .filter(location -> selectedHospitalId.equals(location.getId()))
+                .findFirst()
+                .orElse(null);
+            if (selectedById != null) {
+                return selectedById;
+            }
+        }
+
+        String selectedHospitalName = selectedHospital.trim();
         return Arrays.stream(operation.getAvailableHospitalLocations())
-            .filter(location -> selectedHospitalId.equals(location.getId()))
+            .filter(location -> location.getName() != null)
+            .filter(location -> selectedHospitalName.equalsIgnoreCase(location.getName().trim()))
             .findFirst()
             .orElse(null);
+    }
+
+    private Integer parseSelectedHospitalId(String selectedHospital) {
+        try {
+            return Integer.valueOf(selectedHospital.trim());
+        } catch (NumberFormatException exception) {
+            return null;
+        }
     }
     
     private String findMatchingWardId(HospitalLocation selectedHospitalLocation) {

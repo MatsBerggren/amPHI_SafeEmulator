@@ -24,13 +24,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.dedalus.amphi_integration.model.amphi.AccessRoad;
 import com.dedalus.amphi_integration.model.amphi.Assignment;
+import com.dedalus.amphi_integration.model.amphi.Destination;
 import com.dedalus.amphi_integration.model.amphi.ExtraResources;
 import com.dedalus.amphi_integration.model.amphi.InventoryLevel;
 import com.dedalus.amphi_integration.model.amphi.MethaneReport;
 import com.dedalus.amphi_integration.model.amphi.Position;
 import com.dedalus.amphi_integration.model.amphi.Property;
+import com.dedalus.amphi_integration.model.amphi.Ward;
 import com.dedalus.amphi_integration.model.OperationDistance;
 import com.dedalus.amphi_integration.model.evam.DestinationSiteLocation;
+import com.dedalus.amphi_integration.model.evam.HospitalLocation;
 import com.dedalus.amphi_integration.model.evam.Location;
 import com.dedalus.amphi_integration.model.evam.Operation;
 import com.dedalus.amphi_integration.model.evam.OperationState;
@@ -405,6 +408,76 @@ class AmphiAssignmentServiceImplTest {
         assertEquals("2026-03-06T21:31:00+01:00", result[0].getMethane_report().getTime_first_departure());
         assertEquals(58.0, result[0].getMethane_report().getPosition().getWgs84_dd_la());
         assertEquals(15.0, result[0].getMethane_report().getPosition().getWgs84_dd_lo());
+    }
+
+    @Test
+    void getAllAssignments_ResolvesSelectedDestinationWhenHospitalIsProvidedByName() {
+        DestinationSiteLocation destination = DestinationSiteLocation.builder()
+                .latitude(57.65294)
+                .longitude(14.06855)
+                .street("Barnarpsgatan 43")
+                .locality("Jonkoping")
+                .municipality("Jonkoping")
+                .routeDirections("Infart A")
+                .pickupTime("2026-03-06T21:40:00+01:00")
+                .build();
+        VehicleStatus vehicleStatus = VehicleStatus.builder()
+                .id("2")
+                .name("På väg")
+                .event("PA_VAG")
+                .build();
+        HospitalLocation selectedHospital = HospitalLocation.builder()
+                .id(1)
+                .name("Länssjukhuset Ryhov")
+                .latitude(57.7664914)
+                .longitude(14.1918686)
+                .build();
+        Operation operation = Operation.builder()
+                .id("1")
+                .amPHIUniqueId("row-selected-hospital-name")
+                .callCenterId("1")
+                .caseFolderId("1234567891")
+                .operationID("9")
+                .createdTime(LocalDateTime.of(2026, 3, 6, 19, 16, 22, 523000000))
+                .sendTime(LocalDateTime.of(2026, 3, 6, 19, 17, 22, 523000000))
+                .acceptedTime(LocalDateTime.of(2026, 3, 6, 19, 18, 52, 523000000))
+                .destinationSiteLocation(destination)
+                .patientName("Anna Andersson")
+                .caseInfo("Fallskada")
+                .vehicleStatus(vehicleStatus)
+                .operationState(OperationState.ACTIVE)
+                .assignedResourceMissionNo("339-3090\u00161")
+                .selectedHospital("Länssjukhuset Ryhov")
+                .availableHospitalLocations(new HospitalLocation[] { selectedHospital })
+                .build();
+        Destination amphiDestination = Destination.builder()
+                .name("Ryhov")
+                .wards(new Ward[] {
+                        Ward.builder()
+                                .id("ward-ryhov")
+                                .position(Position.builder()
+                                        .wgs84_dd_la(57.7664914)
+                                        .wgs84_dd_lo(14.1918686)
+                                        .build())
+                                .build()
+                })
+                .build();
+
+        when(evamOperationService.getById("1")).thenReturn(operation);
+        when(operationDistanceRepository.findFirstByOperationIDOrderByTimestampDesc("1:1234567891:9")).thenReturn(Optional.empty());
+        when(amphiAssignmentHistoryRepository.findFirstByOrderByCreatedDesc()).thenReturn(Optional.empty());
+        when(amphiAssignmentHistoryRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(amphiStateEntryService.getAll()).thenReturn(Collections.emptyList());
+        when(evamVehicleStatusService.getAll()).thenReturn(Collections.singletonList(vehicleStatus));
+        when(evamVehicleStatusService.getByName("På väg")).thenReturn(vehicleStatus);
+        when(evamMethaneReportService.getById("1")).thenThrow(new RuntimeException("missing"));
+        when(amphiDestinationRepository.findAll()).thenReturn(List.of(amphiDestination));
+
+        Assignment[] result = amphiAssignmentService.getAllAssignments();
+
+        assertNotNull(result);
+        assertEquals(1, result.length);
+        assertEquals("ward-ryhov", result[0].getSelected_destination());
     }
 
     @Test

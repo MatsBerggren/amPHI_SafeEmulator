@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import com.dedalus.amphi_integration.util.FlexibleIntegerDeserializer;
+import com.dedalus.amphi_integration.util.FlexibleStringDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.gson.annotations.JsonAdapter;
 
@@ -51,9 +52,9 @@ public class Operation {
     private String header2;
     private String eventInfo;
     private String caseInfo;
-    @JsonAdapter(FlexibleIntegerDeserializer.class)
-    @JsonDeserialize(using = FlexibleIntegerDeserializer.class)
-    private Integer selectedHospital;
+    @JsonAdapter(FlexibleStringDeserializer.class)
+    @JsonDeserialize(using = FlexibleStringDeserializer.class)
+    private String selectedHospital;
     @JsonAdapter(FlexibleIntegerDeserializer.class)
     @JsonDeserialize(using = FlexibleIntegerDeserializer.class)
     private Integer selectedPriority;

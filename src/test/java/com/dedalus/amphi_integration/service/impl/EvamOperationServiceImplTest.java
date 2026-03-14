@@ -79,7 +79,7 @@ class EvamOperationServiceImplTest {
         assertEquals("Test operation", result.getName());
         assertEquals("1", result.getCallCenterId());
         assertEquals("1234567891", result.getCaseFolderId());
-        assertEquals(42, result.getSelectedHospital());
+        assertEquals("42", result.getSelectedHospital());
         assertEquals(1, result.getSelectedPriority());
         assertEquals(OperationState.ACTIVE, result.getOperationState());
         assertEquals("1:1234567891:9:1", result.getFullId());
@@ -89,6 +89,31 @@ class EvamOperationServiceImplTest {
         verify(evamTripLocationHistoryRepository).deleteAll();
         verify(evamMethaneRepository).deleteAll();
     }
+
+      @Test
+      void updateOperation_WithHospitalNameSelectedHospital_ParsesWithoutNumberFormatException() {
+        String rawPayload = """
+            {
+              "operationID": "9",
+              "name": "Test operation",
+              "callCenterId": "1",
+              "caseFolderId": "1234567891",
+              "selectedHospital": "Länssjukhuset Ryhov",
+              "selectedPriority": 1,
+              "assignedResourceMissionNo": "339-3090\u00161"
+            }
+            """;
+
+        when(evamOperationRepository.findById("1")).thenReturn(Optional.empty());
+        when(evamOperationRepository.save(org.mockito.ArgumentMatchers.any(Operation.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        Operation result = evamOperationService.updateOperation(rawPayload);
+
+        assertNotNull(result);
+        assertEquals("Länssjukhuset Ryhov", result.getSelectedHospital());
+        assertEquals(1, result.getSelectedPriority());
+      }
 
     @Test
     void updateOperation_WithRawPayload_UpdatesExistingOperation() {

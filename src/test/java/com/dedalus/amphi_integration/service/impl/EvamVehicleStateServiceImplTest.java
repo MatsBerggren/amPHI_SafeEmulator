@@ -2,6 +2,7 @@ package com.dedalus.amphi_integration.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -137,5 +138,49 @@ class EvamVehicleStateServiceImplTest {
         assertNotNull(savedDistance);
         assertEquals(savedDistance.getAssignmentDistance(), savedDistance.getPublishedAssignmentDistance());
         assertEquals("3", savedDistance.getStateID());
+    }
+
+    @Test
+    void updateVehicleState_WhenVehicleStatusIsMissing_RegistersStatusAndUsesGeneratedId() {
+        VehicleState incomingState = VehicleState.builder()
+                .timestamp(LocalDateTime.of(2026, 3, 7, 10, 0, 0))
+                .activeCaseFullId("1:1234567891:9")
+                .vehicleStatus(VehicleStatus.builder()
+                        .name("Ank Hämtplats")
+                        .event("EVENT_AT_SITE")
+                        .successorName("Avf Hämtplats")
+                        .categoryType("STATUS_MISSION")
+                        .categoryName("mission")
+                        .build())
+                .vehicleLocation(Location.builder().latitude(57.7005).longitude(14.1005).build())
+                .build();
+
+        when(amphiStateEntryRepository.findFirstByOrderByTimeDesc()).thenReturn(Optional.empty());
+        when(evamVehicleStatusRepository.findByName("Ank Hämtplats")).thenReturn(null);
+        when(evamVehicleStatusRepository.findAll()).thenReturn(java.util.List.of());
+        when(evamVehicleStatusRepository.save(any(VehicleStatus.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(evamVehicleStateRepository.findFirstByOrderByTimestampDesc()).thenReturn(Optional.of(
+                VehicleState.builder()
+                        .id("1")
+                        .vehicleLocation(Location.builder().latitude(57.7000).longitude(14.1000).build())
+                        .build()));
+        when(operationDistanceRepository.findFirstByOrderByTimestampDesc()).thenReturn(Optional.empty());
+        when(evamVehicleStateRepository.save(any(VehicleState.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(amphiStateEntryService.updateStateEntry(any(StateEntry.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        evamVehicleStateService.updateVehicleState(gson.toJson(incomingState));
+
+        verify(evamVehicleStatusRepository).save(argThat(status ->
+                "1".equals(status.getId())
+                        && "Ank Hämtplats".equals(status.getName())
+                        && "EVENT_AT_SITE".equals(status.getEvent())));
+
+        ArgumentCaptor<OperationDistance> captor = ArgumentCaptor.forClass(OperationDistance.class);
+        verify(operationDistanceRepository).save(captor.capture());
+        OperationDistance savedDistance = captor.getValue();
+
+        assertNotNull(savedDistance);
+        assertEquals("1", savedDistance.getStateID());
+        assertEquals(savedDistance.getAssignmentDistance(), savedDistance.getPublishedAssignmentDistance());
     }
 }

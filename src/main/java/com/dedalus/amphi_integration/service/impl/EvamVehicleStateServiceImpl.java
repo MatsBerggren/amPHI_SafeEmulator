@@ -1,6 +1,8 @@
 package com.dedalus.amphi_integration.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import com.dedalus.amphi_integration.model.amphi.StateEntry;
 import com.dedalus.amphi_integration.model.evam.Operation;
 import com.dedalus.amphi_integration.model.evam.OperationState;
 import com.dedalus.amphi_integration.model.evam.VehicleState;
+import com.dedalus.amphi_integration.model.evam.VehicleStatus;
 import com.dedalus.amphi_integration.repository.AmphiStateEntryRepository;
 import com.dedalus.amphi_integration.repository.EvamOperationRepository;
 import com.dedalus.amphi_integration.repository.EvamVehicleStateRepository;
@@ -102,10 +105,41 @@ public class EvamVehicleStateServiceImpl implements EvamVehicleStateService {
      */
     private String getVehicleStatusId(VehicleState vehicleState) {
         return Optional.ofNullable(vehicleState.getVehicleStatus())
-                        .map(status -> evamVehicleStatusRepository.findByName(status.getName()))
-                        .map(status -> status.getId())
-                        .orElse("0");
+                .filter(status -> status.getName() != null && !status.getName().isBlank())
+                .map(status -> Optional.ofNullable(evamVehicleStatusRepository.findByName(status.getName()))
+                    .orElseGet(() -> registerVehicleStatus(status)))
+                .map(VehicleStatus::getId)
+                .orElse("0");
     }
+
+        private VehicleStatus registerVehicleStatus(VehicleStatus incomingStatus) {
+        List<VehicleStatus> existingStatuses = evamVehicleStatusRepository.findAll().stream()
+            .filter(status -> status.getName() != null && !status.getName().isBlank())
+            .toList();
+
+        String nextId = existingStatuses.stream()
+            .map(VehicleStatus::getId)
+            .filter(id -> id != null && !id.isBlank())
+            .filter(id -> id.chars().allMatch(Character::isDigit))
+            .map(Integer::parseInt)
+            .max(Comparator.naturalOrder())
+            .map(maxId -> Integer.toString(maxId + 1))
+            .orElse("1");
+
+        VehicleStatus persistedStatus = VehicleStatus.builder()
+            .id(nextId)
+            .name(incomingStatus.getName())
+            .event(incomingStatus.getEvent())
+            .successorName(incomingStatus.getSuccessorName())
+            .isStartStatus(incomingStatus.getIsStartStatus())
+            .isEndStatus(incomingStatus.getIsEndStatus())
+            .categoryType(incomingStatus.getCategoryType())
+            .categoryName(incomingStatus.getCategoryName())
+            .build();
+
+        log.info("Registering missing vehicle status '{}' with generated id {}", incomingStatus.getName(), nextId);
+        return evamVehicleStatusRepository.save(persistedStatus);
+        }
 
     private double calculateDistance(VehicleState vehicleState) {
         Optional<VehicleState> latestVehicleState = evamVehicleStateRepository.findFirstByOrderByTimestampDesc();

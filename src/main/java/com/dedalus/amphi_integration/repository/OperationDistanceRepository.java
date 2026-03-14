@@ -1,8 +1,12 @@
 package com.dedalus.amphi_integration.repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Repository;
 
@@ -16,6 +20,21 @@ public class OperationDistanceRepository extends JsonFileRepository<OperationDis
     @PostConstruct
     public void init() {
         initialize(OperationDistance.class);
+    }
+
+    @Override
+    protected Map<String, OperationDistance> normalizeLoadedData(Map<String, OperationDistance> data) {
+        return data.entrySet().stream()
+                .sorted(Comparator.comparing(
+                        Map.Entry<String, OperationDistance>::getValue,
+                        Comparator.comparing(
+                                OperationDistance::getTimestamp,
+                                Comparator.nullsLast(LocalDateTime::compareTo))))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (first, second) -> first,
+                        LinkedHashMap::new));
     }
 
     public void deleteByTimestampBefore(LocalDate date) {

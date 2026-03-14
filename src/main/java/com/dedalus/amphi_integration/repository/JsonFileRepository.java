@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -17,7 +18,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Generic JSON file-based repository for storing entities.
@@ -28,8 +28,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JsonFileRepository<T> {
 
     private final ObjectMapper objectMapper;
-    private final Map<String, T> storage = new ConcurrentHashMap<>();
+    private final Map<String, T> storage = Collections.synchronizedMap(new LinkedHashMap<>());
     private final String dataDirectory = "data";
+    @Value("${repository.load-on-startup:false}")
+    private boolean loadOnStartup;
+
+    private Class<T> entityClass;
     private String fileName;
 
     public JsonFileRepository() {
@@ -47,14 +51,26 @@ public class JsonFileRepository<T> {
      * Initialize repository with entity class
      */
     public void initialize(Class<T> entityClass) {
+        this.entityClass = entityClass;
         this.fileName = entityClass.getSimpleName() + ".json";
         ensureDataDirectoryExists();
+        if (loadOnStartup) {
+            reloadFromDisk();
+        }
+    }
+
+    public int reloadFromDisk() {
+        if (entityClass == null) {
+            throw new IllegalStateException("Repository must be initialized before loading from disk");
+        }
+
         loadFromFile(entityClass);
+        return storage.size();
     }
 
     private void ensureDataDirectoryExists() {
         try {
-            Path path = Paths.get(dataDirectory);
+            Path path = getDataDirectoryPath();
             if (!Files.exists(path)) {
                 Files.createDirectories(path);
             }
@@ -64,13 +80,16 @@ public class JsonFileRepository<T> {
     }
 
     private void loadFromFile(Class<T> entityClass) {
-        File file = new File(dataDirectory, fileName);
+        File file = getDataDirectoryPath().resolve(fileName).toFile();
         if (file.exists()) {
             try {
                 Map<String, T> data = objectMapper.readValue(file,
-                        objectMapper.getTypeFactory().constructMapType(HashMap.class, String.class, entityClass));
-                storage.clear();
-                storage.putAll(data);
+                        objectMapper.getTypeFactory().constructMapType(LinkedHashMap.class, String.class, entityClass));
+                Map<String, T> normalizedData = normalizeLoadedData(data);
+                synchronized (storage) {
+                    storage.clear();
+                    storage.putAll(normalizedData);
+                }
                 log.info("Loaded {} entities from {}", storage.size(), fileName);
             } catch (IOException e) {
                 log.error("Failed to load data from file: {}", fileName, e);
@@ -81,9 +100,9 @@ public class JsonFileRepository<T> {
     }
 
     private void saveToFile() {
-        File file = new File(dataDirectory, fileName);
+        File file = getDataDirectoryPath().resolve(fileName).toFile();
         try {
-            objectMapper.writeValue(file, storage);
+            objectMapper.writeValue(file, createPersistenceSnapshot());
             log.debug("Saved {} entities to {}", storage.size(), fileName);
         } catch (IOException e) {
             log.error("Failed to save data to file: {}", fileName, e);
@@ -96,7 +115,9 @@ public class JsonFileRepository<T> {
             id = UUID.randomUUID().toString();
             setId(entity, id);
         }
-        storage.put(id, entity);
+        synchronized (storage) {
+            storage.put(id, entity);
+        }
         saveToFile();
         return entity;
     }
@@ -106,11 +127,15 @@ public class JsonFileRepository<T> {
     }
 
     public List<T> findAll() {
-        return new ArrayList<>(storage.values());
+        synchronized (storage) {
+            return new ArrayList<>(storage.values());
+        }
     }
 
     public void deleteById(String id) {
-        storage.remove(id);
+        synchronized (storage) {
+            storage.remove(id);
+        }
         saveToFile();
     }
 
@@ -122,7 +147,9 @@ public class JsonFileRepository<T> {
     }
 
     public void deleteAll() {
-        storage.clear();
+        synchronized (storage) {
+            storage.clear();
+        }
         saveToFile();
     }
 
@@ -174,5 +201,19 @@ public class JsonFileRepository<T> {
         List<T> result = new ArrayList<>();
         entities.forEach(entity -> result.add(save(entity)));
         return result;
+    }
+
+    protected Path getDataDirectoryPath() {
+        return Paths.get(dataDirectory);
+    }
+
+    protected Map<String, T> normalizeLoadedData(Map<String, T> data) {
+        return data;
+    }
+
+    protected Map<String, T> createPersistenceSnapshot() {
+        synchronized (storage) {
+            return new LinkedHashMap<>(storage);
+        }
     }
 }

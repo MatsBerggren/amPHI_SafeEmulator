@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Generated log analysis archives are local artifacts and can exceed GitHub file size limits.
+data/log-analysis/

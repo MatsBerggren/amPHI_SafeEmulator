@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EVAM Log Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5efe4;
+      --surface: rgba(252, 248, 241, 0.92);
+      --surface-strong: rgba(255, 252, 247, 0.98);
+      --line: rgba(31, 31, 24, 0.12);
+      --text: #1f1f18;
+      --muted: #5f6457;
+      --accent: #b94f2d;
+      --accent-strong: #7f2d17;
+      --ok: #245c43;
+      --warn: #925d12;
+      --shadow: 0 22px 60px rgba(58, 38, 18, 0.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'IBM Plex Sans', sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(185, 79, 45, 0.16), transparent 28%),
+        radial-gradient(circle at right 20%, rgba(36, 92, 67, 0.12), transparent 24%),
+        linear-gradient(135deg, #f8f4ec 0%, #efe6d7 52%, #f6efe6 100%);
+    }
+    .shell {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+    .hero-copy {
+      padding: 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-copy::after {
+      content: '';
+      position: absolute;
+      inset: auto -40px -70px auto;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(185, 79, 45, 0.18), rgba(127, 45, 23, 0.02));
+    }
+    .eyebrow {
+      font-size: 12px;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    h1 {
+      margin: 14px 0 12px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(34px, 5vw, 64px);
+      line-height: 0.94;
+      max-width: 10ch;
+    }
+    .lead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+      max-width: 62ch;
+    }
+    .upload-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(248,242,232,0.86));
+    }
+    .upload-box {
+      border: 1.5px dashed rgba(185, 79, 45, 0.32);
+      border-radius: 22px;
+      padding: 18px;
+      background: rgba(255,255,255,0.62);
+    }
+    .upload-copy {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    input[type="file"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: white;
+      font: inherit;
+    }
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: white;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+      box-shadow: 0 12px 30px rgba(127, 45, 23, 0.22);
+    }
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+    button:disabled {
+      cursor: wait;
+      opacity: 0.72;
+    }
+    .button-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .button-row.tight {
+      margin-top: 12px;
+    }
+    .ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+      box-shadow: none;
+    }
+    .status {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .status.error {
+      color: #8d2f1c;
+    }
+    .progress-card {
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.72);
+      display: grid;
+      gap: 10px;
+    }
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .progress-counter {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .progress-track {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(31, 31, 24, 0.08);
+    }
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+      transition: width 220ms ease;
+    }
+    .progress-card.indeterminate .progress-bar {
+      width: 40%;
+      animation: progress-slide 1.2s ease-in-out infinite;
+    }
+    .progress-detail {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    .progress-steps {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .progress-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .progress-step::before {
+      content: '';
+      flex: 0 0 10px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(31, 31, 24, 0.18);
+      background: rgba(31, 31, 24, 0.08);
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.5);
+    }
+    .progress-step.active {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .progress-step.active::before {
+      background: var(--accent);
+      border-color: rgba(127, 45, 23, 0.35);
+    }
+    .progress-step.done {
+      color: var(--text);
+    }
+    .progress-step.done::before {
+      background: var(--ok);
+      border-color: rgba(36, 92, 67, 0.35);
+    }
+    .progress-step.failed {
+      color: #8d2f1c;
+      font-weight: 600;
+    }
+    .progress-step.failed::before {
+      background: #8d2f1c;
+      border-color: rgba(141, 47, 28, 0.35);
+    }
+    @keyframes progress-slide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(260%); }
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+    .card {
+      padding: 22px;
+    }
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .metric {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--surface-strong);
+    }
+    .metric span {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 28px;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(185, 79, 45, 0.08);
+      border: 1px solid rgba(185, 79, 45, 0.16);
+      font-size: 13px;
+    }
+    .chip.ok {
+      background: rgba(36, 92, 67, 0.08);
+      border-color: rgba(36, 92, 67, 0.18);
+    }
+    .chip.warn {
+      background: rgba(146, 93, 18, 0.1);
+      border-color: rgba(146, 93, 18, 0.18);
+    }
+    .list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .archive-item, .group-item {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.66);
+    }
+    .archive-item button {
+      width: 100%;
+      box-shadow: none;
+      padding: 12px 14px;
+    }
+    .archive-meta, .group-meta {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .kv {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .kv:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    .kv strong {
+      font-weight: 600;
+    }
+    .sequence {
+      padding: 22px;
+    }
+    .sequence-list {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .call {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.72);
+      overflow: hidden;
+    }
+    .call-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255,255,255,0.6);
+    }
+    .call-title {
+      display: grid;
+      gap: 4px;
+    }
+    .call-title strong {
+      font-size: 17px;
+    }
+    .call-meta {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .tag-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: start;
+    }
+    .tag {
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: 1px solid var(--line);
+    }
+    .tag.replayable { color: var(--ok); border-color: rgba(36, 92, 67, 0.24); }
+    .tag.observed { color: var(--warn); border-color: rgba(146, 93, 18, 0.24); }
+    .call-body {
+      padding: 16px 18px 18px;
+      display: grid;
+      gap: 14px;
+    }
+    pre {
+      margin: 0;
+      padding: 14px;
+      border-radius: 16px;
+      background: #1e1d19;
+      color: #f7f3ed;
+      overflow: auto;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .empty {
+      padding: 28px;
+      text-align: center;
+      color: var(--muted);
+    }
+    .hidden { display: none; }
+    @media (max-width: 1080px) {
+      .hero, .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 640px) {
+      .shell { padding: 16px; }
+      .hero-copy, .upload-card, .card, .sequence { padding: 18px; }
+      .metric-grid { grid-template-columns: 1fr 1fr; }
+      .call-head { flex-direction: column; }
+      .tag-row { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="panel hero-copy">
+        <div class="eyebrow">amPHI SafeEmulator</div>
+        <h1>EVAM Log Analyzer</h1>
+        <p class="lead">Ladda upp en loggfil, extrahera så mycket användbar trafik som möjligt och få en sekvens av API-anrop mot emulatorn som kan användas som grund för replay.</p>
+      </div>
+      <form class="panel upload-card" id="uploadForm">
+        <div class="upload-box">
+          <label for="fileInput">Loggfil eller mapp</label>
+          <input id="fileInput" name="file" type="file" accept=".log,.txt,.json,.out" multiple>
+          <div class="upload-copy">För en hel mapp: använd knappen nedan. Filerna läses in i filordning och analyseras som en sammanhängande sekvens.</div>
+          <div class="button-row tight">
+            <button id="folderButton" class="ghost" type="button">Välj mapp</button>
+          </div>
+          <input id="folderInput" type="file" accept=".log,.txt,.json,.out" webkitdirectory directory multiple class="hidden">
+        </div>
+        <div class="button-row">
+          <button id="analyzeButton" type="submit">Analysera logg</button>
+          <button id="replayButton" class="hidden" type="button">Replaya analys</button>
+          <button id="downloadScenarioButton" class="ghost hidden" type="button">Ladda ner scenario.json</button>
+        </div>
+        <div class="progress-card hidden" id="analysisProgress">
+          <div class="progress-head">
+            <span id="progressPhase">Väntar på analys.</span>
+            <span class="progress-counter" id="progressCounter"></span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+          <div class="progress-detail" id="progressDetail">Status visas här när analysen startar.</div>
+          <ol class="progress-steps" id="progressSteps">
+            <li class="progress-step" data-step="queued">Startar analys</li>
+            <li class="progress-step" data-step="extracting">Läser och tolkar loggfiler</li>
+            <li class="progress-step" data-step="normalizing">Normaliserar anrop</li>
+            <li class="progress-step" data-step="grouping">Grupperar operationer</li>
+            <li class="progress-step" data-step="summarizing">Bygger sammanfattning</li>
+            <li class="progress-step" data-step="saving">Sparar resultat</li>
+            <li class="progress-step" data-step="completed">Analys klar</li>
+          </ol>
+        </div>
+        <div class="status" id="statusText">Välj en fil för att starta analysen.</div>
+        <div class="status" id="replayStatus"></div>
+      </form>
+    </section>
+
+    <section class="grid">
+      <div class="stack">
+        <article class="panel card">
+          <div class="eyebrow">Sammanfattning</div>
+          <div class="metric-grid" id="metricGrid">
+            <div class="metric"><span>Händelser</span><strong>0</strong></div>
+            <div class="metric"><span>Replaybara</span><strong>0</strong></div>
+            <div class="metric"><span>Observations-only</span><strong>0</strong></div>
+            <div class="metric"><span>Endpoints</span><strong>0</strong></div>
+          </div>
+          <div class="chips" id="qualityChips"></div>
+        </article>
+
+        <article class="panel card">
+          <div class="eyebrow">Analys</div>
+          <div class="list" id="detailsList">
+            <div class="empty">Ingen analys ännu.</div>
+          </div>
+        </article>
+
+        <article class="panel card">
+          <div class="eyebrow">Sparade analyser</div>
+          <div class="button-row tight">
+            <button id="refreshArchiveButton" class="ghost" type="button">Uppdatera lista</button>
+          </div>
+          <div class="list" id="archiveList">
+            <div class="empty">Inga sparade analyser ännu.</div>
+          </div>
+        </article>
+
+        <article class="panel card">
+          <div class="eyebrow">Operationer</div>
+          <div class="list" id="groupList">
+            <div class="empty">Operationgrupper visas här efter analys.</div>
+          </div>
+        </article>
+      </div>
+
+      <article class="panel sequence">
+        <div class="eyebrow">API-sekvens</div>
+        <div class="sequence-list" id="sequenceList">
+          <div class="empty">När analysen är klar visas varje upptäckt anrop här.</div>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const uploadForm = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('fileInput');
+    const folderInput = document.getElementById('folderInput');
+    const folderButton = document.getElementById('folderButton');
+    const analyzeButton = document.getElementById('analyzeButton');
+    const replayButton = document.getElementById('replayButton');
+    const downloadScenarioButton = document.getElementById('downloadScenarioButton');
+    const refreshArchiveButton = document.getElementById('refreshArchiveButton');
+    const analysisProgress = document.getElementById('analysisProgress');
+    const progressPhase = document.getElementById('progressPhase');
+    const progressCounter = document.getElementById('progressCounter');
+    const progressBar = document.getElementById('progressBar');
+    const progressDetail = document.getElementById('progressDetail');
+    const progressSteps = Array.from(document.querySelectorAll('#progressSteps .progress-step'));
+    const statusText = document.getElementById('statusText');
+    const replayStatus = document.getElementById('replayStatus');
+    const metricGrid = document.getElementById('metricGrid');
+    const qualityChips = document.getElementById('qualityChips');
+    const detailsList = document.getElementById('detailsList');
+    const archiveList = document.getElementById('archiveList');
+    const groupList = document.getElementById('groupList');
+    const sequenceList = document.getElementById('sequenceList');
+
+    let lastResult = null;
+    let lastScenario = null;
+    let lastScenarioName = 'scenario.json';
+    let selectedFiles = [];
+    let activeJobId = null;
+    let activeJobStartedAt = null;
+    const orderedProgressSteps = ['queued', 'extracting', 'normalizing', 'grouping', 'summarizing', 'saving', 'completed'];
+
+    function setStatus(message, isError = false) {
+      statusText.textContent = message;
+      statusText.classList.toggle('error', isError);
+    }
+
+    function resetProgress() {
+      analysisProgress.classList.add('hidden');
+      analysisProgress.classList.remove('indeterminate');
+      progressPhase.textContent = 'Väntar på analys.';
+      progressCounter.textContent = '';
+      progressBar.style.width = '0%';
+      progressDetail.textContent = 'Status visas här när analysen startar.';
+      updateProgressSteps('queued', false, false);
+      activeJobId = null;
+      activeJobStartedAt = null;
+    }
+
+    function updateProgressSteps(activePhase, isFailed = false, isCompleted = false) {
+      const activeIndex = orderedProgressSteps.indexOf(activePhase);
+      progressSteps.forEach((step) => {
+        const stepPhase = step.dataset.step;
+        const stepIndex = orderedProgressSteps.indexOf(stepPhase);
+        step.classList.remove('active', 'done', 'failed');
+
+        if (isFailed) {
+          if (stepPhase === activePhase) {
+            step.classList.add('failed');
+          } else if (stepIndex > -1 && activeIndex > -1 && stepIndex < activeIndex) {
+            step.classList.add('done');
+          }
+          return;
+        }
+
+        if (isCompleted) {
+          step.classList.add('done');
+          return;
+        }
+
+        if (stepPhase === activePhase) {
+          step.classList.add('active');
+        } else if (stepIndex > -1 && activeIndex > -1 && stepIndex < activeIndex) {
+          step.classList.add('done');
+        }
+      });
+    }
+
+    function setProgress({ phase, counter = '', percent = null, detail = '', indeterminate = false }) {
+      analysisProgress.classList.remove('hidden');
+      analysisProgress.classList.toggle('indeterminate', indeterminate);
+      progressPhase.textContent = phase;
+      progressCounter.textContent = counter;
+      progressDetail.textContent = detail;
+      progressBar.style.width = indeterminate || percent == null ? '40%' : `${Math.max(0, Math.min(100, percent))}%`;
+    }
+
+    function phaseLabel(phase) {
+      switch (phase) {
+        case 'queued': return 'Köad';
+        case 'extracting': return 'Extraherar';
+        case 'analyzing': return 'Analyserar';
+        case 'normalizing': return 'Normaliserar';
+        case 'grouping': return 'Grupperar';
+        case 'summarizing': return 'Sammanfattar';
+        case 'saving': return 'Sparar';
+        case 'completed': return 'Klart';
+        case 'failed': return 'Fel';
+        default: return 'Analyserar';
+      }
+    }
+
+    function elapsedSecondsLabel() {
+      if (!activeJobStartedAt) {
+        return '';
+      }
+      const elapsedSeconds = Math.max(0, Math.round((Date.now() - activeJobStartedAt) / 1000));
+      return `${elapsedSeconds}s`;
+    }
+
+    function updateJobProgress(status) {
+      const totalFiles = Number(status.totalFiles || 0);
+      const processedFiles = Number(status.processedFiles || 0);
+      const isMultiFile = totalFiles > 1;
+      const isDone = status.state === 'COMPLETED' || status.state === 'FAILED';
+      const counter = isMultiFile ? `${Math.min(processedFiles, totalFiles)} / ${totalFiles} filer` : elapsedSecondsLabel();
+      const detailParts = [];
+      if (status.message) {
+        detailParts.push(status.message);
+      }
+      if (status.currentFile) {
+        detailParts.push(status.currentFile);
+      }
+      if (!isMultiFile && !isDone) {
+        const elapsed = elapsedSecondsLabel();
+        if (elapsed) {
+          detailParts.push(`Pågår i ${elapsed}.`);
+        }
+      }
+
+      if (status.message) {
+        setStatus(status.message, status.state === 'FAILED');
+      }
+
+      updateProgressSteps(status.phase || 'queued', status.state === 'FAILED', status.state === 'COMPLETED');
+
+      setProgress({
+        phase: phaseLabel(status.phase),
+        counter,
+        percent: isMultiFile ? Math.round((Math.min(processedFiles, totalFiles) / totalFiles) * 100) : null,
+        detail: detailParts.join('\n'),
+        indeterminate: !isDone && !isMultiFile
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+    }
+
+    function getSelectedFiles() {
+      if (selectedFiles.length) {
+        return selectedFiles;
+      }
+      return Array.from(fileInput.files || []);
+    }
+
+    function setSelectedFiles(files) {
+      selectedFiles = Array.from(files || []);
+      if (!selectedFiles.length) {
+        setStatus('Välj en fil eller mapp för att starta analysen.');
+        return;
+      }
+
+      const hasFolderPaths = selectedFiles.some((file) => file.webkitRelativePath && file.webkitRelativePath.includes('/'));
+      const totalBytes = selectedFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+      const selectionLabel = hasFolderPaths
+        ? `Vald mapp med ${selectedFiles.length} filer (${Math.round(totalBytes / 1024 / 1024)} MB totalt).`
+        : `${selectedFiles.length} fil(er) valda (${Math.round(totalBytes / 1024 / 1024)} MB totalt).`;
+      setStatus(selectionLabel);
+    }
+
+    function sortFiles(files) {
+      return Array.from(files).sort((left, right) => {
+        const leftName = (left.webkitRelativePath && left.webkitRelativePath.length) ? left.webkitRelativePath : left.name;
+        const rightName = (right.webkitRelativePath && right.webkitRelativePath.length) ? right.webkitRelativePath : right.name;
+        return leftName.localeCompare(rightName, 'sv', { numeric: true, sensitivity: 'base' });
+      });
+    }
+
+    function buildSourceLogLabel(files) {
+      const sortedFiles = sortFiles(files);
+      const folderPath = sortedFiles.find((file) => file.webkitRelativePath && file.webkitRelativePath.includes('/'))?.webkitRelativePath;
+      if (folderPath) {
+        const folderName = folderPath.split('/')[0] || 'selected-folder';
+        return `Folder upload: ${folderName} (${sortedFiles.length} filer)`;
+      }
+      if (sortedFiles.length === 1) {
+        return sortedFiles[0].name;
+      }
+      return `Batch upload (${sortedFiles.length} filer)`;
+    }
+
+    function appendFiles(formData, files) {
+      files.forEach((file) => {
+        const uploadName = file.webkitRelativePath && file.webkitRelativePath.length
+          ? file.webkitRelativePath.replaceAll('\\', '/')
+          : file.name;
+        formData.append('file', file, uploadName);
+      });
+    }
+
+    async function readResponsePayload(response) {
+      const text = await response.text();
+      if (!text || !text.trim()) {
+        return null;
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        return { message: text };
+      }
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { message: text };
+      }
+    }
+
+    async function uploadFilesSequentially(files) {
+      const orderedFiles = sortFiles(files);
+      const oversizedFile = orderedFiles.find((file) => (file.size || 0) > 64 * 1024 * 1024);
+      if (oversizedFile) {
+        throw new Error(`Filen ${oversizedFile.name} är större än 64 MB och kan inte laddas upp.`);
+      }
+
+      const startResponse = await fetch('/api/log-analysis/import-sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sourceLog: buildSourceLogLabel(orderedFiles),
+          totalFiles: orderedFiles.length
+        })
+      });
+      const startData = await readResponsePayload(startResponse);
+      if (!startResponse.ok) {
+        throw new Error(startData?.message || 'Kunde inte starta stegvis import.');
+      }
+
+      const sessionId = startData.sessionId;
+      setProgress({
+        phase: 'Förbereder import',
+        counter: `0 / ${orderedFiles.length} filer`,
+        percent: 0,
+        detail: 'Importsession skapad.'
+      });
+      updateProgressSteps('queued', false, false);
+      for (let index = 0; index < orderedFiles.length; index += 1) {
+        const file = orderedFiles[index];
+        const uploadName = file.webkitRelativePath && file.webkitRelativePath.length
+          ? file.webkitRelativePath.replaceAll('\\', '/')
+          : file.name;
+        setStatus(`Läser in fil ${index + 1} av ${orderedFiles.length}: ${uploadName}`);
+        setProgress({
+          phase: 'Läser in filer',
+          counter: `${index} / ${orderedFiles.length} filer`,
+          percent: Math.round((index / orderedFiles.length) * 100),
+          detail: `Uppladdning och extrahering av ${uploadName}`
+        });
+        updateProgressSteps('extracting', false, false);
+
+        const formData = new FormData();
+        formData.append('file', file, uploadName);
+
+        const appendResponse = await fetch(`/api/log-analysis/import-sessions/${encodeURIComponent(sessionId)}/files`, {
+          method: 'POST',
+          body: formData
+        });
+        const appendData = await readResponsePayload(appendResponse);
+        if (!appendResponse.ok) {
+          throw new Error(appendData?.message || `Import av ${uploadName} misslyckades.`);
+        }
+
+        setProgress({
+          phase: 'Läser in filer',
+          counter: `${appendData.processedFiles} / ${appendData.totalFiles} filer`,
+          percent: Math.round((appendData.processedFiles / appendData.totalFiles) * 100),
+          detail: `Senast klar: ${appendData.lastFile || uploadName}`
+        });
+        updateProgressSteps('extracting', false, false);
+      }
+
+      setStatus(`Slutför analys efter ${orderedFiles.length} filer...`);
+      const completeResponse = await fetch(`/api/log-analysis/import-sessions/${encodeURIComponent(sessionId)}/complete-job`, {
+        method: 'POST'
+      });
+      const completeData = await readResponsePayload(completeResponse);
+      if (!completeResponse.ok) {
+        throw new Error(completeData?.message || 'Kunde inte slutföra stegvis import.');
+      }
+
+      return pollJobUntilComplete(completeData.jobId);
+    }
+
+    async function startAnalysisJob(files) {
+      const formData = new FormData();
+      appendFiles(formData, files);
+      const response = await fetch('/api/log-analysis/jobs', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await readResponsePayload(response);
+      if (!response.ok) {
+        throw new Error(data?.message || `Analysen misslyckades (HTTP ${response.status}).`);
+      }
+      return data;
+    }
+
+    async function fetchJobStatus(jobId) {
+      const response = await fetch(`/api/log-analysis/jobs/${encodeURIComponent(jobId)}`, {
+        cache: 'no-store'
+      });
+      const data = await readResponsePayload(response);
+      if (!response.ok) {
+        throw new Error(data?.message || 'Kunde inte läsa analysstatus.');
+      }
+      return data;
+    }
+
+    async function pollJobUntilComplete(jobId) {
+      activeJobId = jobId;
+      activeJobStartedAt = Date.now();
+
+      while (true) {
+        const status = await fetchJobStatus(jobId);
+        updateJobProgress(status);
+
+        if (status.state === 'COMPLETED') {
+          return status.result;
+        }
+        if (status.state === 'FAILED') {
+          throw new Error(status.errorMessage || status.message || 'Analysen misslyckades.');
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, 700));
+      }
+    }
+
+    function renderMetrics(summary) {
+      const metrics = [
+        ['Händelser', summary.totalEvents],
+        ['Replaybara', summary.replayableEvents],
+        ['Observations-only', summary.observedOnlyEvents],
+        ['Endpoints', summary.endpointsObserved]
+      ];
+      metricGrid.innerHTML = metrics.map(([label, value]) => `
+        <div class="metric">
+          <span>${label}</span>
+          <strong>${value}</strong>
+        </div>
+      `).join('');
+    }
+
+    function renderChips(summary) {
+      const chips = [];
+      Object.entries(summary.qualityCounts || {}).forEach(([key, value]) => {
+        const type = key === 'RAW_REQUEST' || key === 'RECONSTRUCTED_RETURN' || key === 'INFERRED_CONTEXT' ? 'ok' : 'warn';
+        chips.push(`<div class="chip ${type}">${key}: ${value}</div>`);
+      });
+      Object.entries(summary.endpointCounts || {}).forEach(([key, value]) => {
+        chips.push(`<div class="chip">${key}: ${value}</div>`);
+      });
+      qualityChips.innerHTML = chips.join('');
+    }
+
+    function renderDetails(summary) {
+      const rows = [
+        ['Analys-id', summary.analysisId || '-'],
+        ['Källfil', summary.sourceLog || '-'],
+        ['Genererad', summary.generatedAt || '-'],
+        ['Sparad', summary.savedAt || '-'],
+        ['Första request', summary.firstRequestTimestamp || '-'],
+        ['Sista request', summary.lastRequestTimestamp || '-'],
+        ['Payload saknas', summary.payloadlessEvents],
+        ['Operationer', (summary.operationKeys || []).join(', ') || '-'],
+        ['Noteringar', (summary.notes || []).join(' | ') || '-']
+      ];
+      detailsList.innerHTML = rows.map(([label, value]) => `
+        <div class="kv">
+          <strong>${label}</strong>
+          <span>${escapeHtml(value)}</span>
+        </div>
+      `).join('');
+    }
+
+    function renderGroups(operationGroups) {
+      if (!operationGroups || !operationGroups.length) {
+        groupList.innerHTML = '<div class="empty">Inga operationgrupper kunde byggas.</div>';
+        return;
+      }
+
+      groupList.innerHTML = operationGroups.map((group) => `
+        <article class="group-item">
+          <strong>${escapeHtml(group.operationKey)}</strong>
+          <div class="group-meta">
+            ${group.callCount} anrop • ${group.replayableCount} replaybara<br>
+            ${escapeHtml((group.endpoints || []).join(', '))}<br>
+            ${group.firstRelativeTimeSeconds == null ? '-' : 'T+' + group.firstRelativeTimeSeconds + 's'} till ${group.lastRelativeTimeSeconds == null ? '-' : 'T+' + group.lastRelativeTimeSeconds + 's'}
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function renderArchive(items) {
+      if (!items || !items.length) {
+        archiveList.innerHTML = '<div class="empty">Inga sparade analyser ännu.</div>';
+        return;
+      }
+
+      archiveList.innerHTML = items.map((item) => `
+        <article class="archive-item">
+          <button type="button" data-analysis-id="${escapeHtml(item.analysisId)}">${escapeHtml(item.sourceLog || item.analysisId)}</button>
+          <div class="archive-meta">
+            ${item.savedAt || '-'}<br>
+            ${item.totalEvents} händelser • ${item.replayableEvents} replaybara<br>
+            ${(item.operationKeys || []).join(', ') || 'Ingen operation nyckel'}
+          </div>
+        </article>
+      `).join('');
+
+      archiveList.querySelectorAll('button[data-analysis-id]').forEach((button) => {
+        button.addEventListener('click', () => loadArchivedAnalysis(button.dataset.analysisId));
+      });
+    }
+
+    function renderCalls(apiCalls) {
+      if (!apiCalls.length) {
+        sequenceList.innerHTML = '<div class="empty">Inga anrop kunde extraheras.</div>';
+        return;
+      }
+
+      sequenceList.innerHTML = apiCalls.map((call) => {
+        const replayClass = call.replayable ? 'replayable' : 'observed';
+        const replayLabel = call.replayable ? 'Replaybar' : 'Behöver handpåläggning';
+        const payloadBlock = call.payloadJson
+          ? `<pre>${escapeHtml(call.payloadJson)}</pre>`
+          : '<div class="empty">Ingen payload kunde rekonstrueras från loggen.</div>';
+        const commandBlock = call.replayCommand
+          ? `<pre>${escapeHtml(call.replayCommand)}</pre>`
+          : '';
+
+        return `
+          <section class="call">
+            <div class="call-head">
+              <div class="call-title">
+                <strong>${escapeHtml(call.sequence)}. ${escapeHtml(call.method || 'POST')} ${escapeHtml(call.endpoint || '-')}</strong>
+                <div class="call-meta">${escapeHtml(call.requestTimestamp || 'Tid saknas')} • ${call.relativeTimeSeconds == null ? 'T+?' : 'T+' + call.relativeTimeSeconds + 's'} • ${escapeHtml(call.operationKey || 'Ingen operation nyckel')}</div>
+              </div>
+              <div class="tag-row">
+                <div class="tag ${replayClass}">${replayLabel}</div>
+                <div class="tag">${escapeHtml(call.extractionQuality || '-')}</div>
+                <div class="tag">${escapeHtml(call.payloadType || '-')}</div>
+              </div>
+            </div>
+            <div class="call-body">
+              ${call.note ? `<div>${escapeHtml(call.note)}</div>` : ''}
+              ${payloadBlock}
+              ${commandBlock}
+            </div>
+          </section>
+        `;
+      }).join('');
+    }
+
+    function downloadScenario() {
+      if (!lastScenario) {
+        return;
+      }
+      const blob = new Blob([JSON.stringify(lastScenario, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = lastScenarioName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function renderResult(result) {
+      lastResult = result;
+      lastScenario = result.scenario;
+      lastScenarioName = `${(result.summary?.sourceLog || 'scenario')}.scenario.json`;
+      renderMetrics(result.summary || {});
+      renderChips(result.summary || {});
+      renderDetails(result.summary || {});
+      renderGroups(result.operationGroups || []);
+      renderCalls(result.apiCalls || []);
+      downloadScenarioButton.classList.remove('hidden');
+      replayButton.classList.toggle('hidden', !result.summary?.analysisId);
+    }
+
+    async function refreshArchive() {
+      try {
+        const response = await fetch('/api/log-analysis/archive');
+        const data = await readResponsePayload(response);
+        if (!response.ok) {
+          throw new Error(data?.message || 'Kunde inte läsa sparade analyser.');
+        }
+        renderArchive(Array.isArray(data) ? data : []);
+      } catch (error) {
+        archiveList.innerHTML = `<div class="empty">${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    async function loadArchivedAnalysis(analysisId) {
+      setStatus(`Laddar sparad analys ${analysisId}...`);
+      try {
+        const response = await fetch(`/api/log-analysis/archive/${encodeURIComponent(analysisId)}`);
+        const data = await readResponsePayload(response);
+        if (!response.ok) {
+          throw new Error(data?.message || 'Kunde inte läsa analysen.');
+        }
+        renderResult(data);
+        setStatus(`Sparad analys ${analysisId} laddad.`);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    async function replayCurrentAnalysis() {
+      const analysisId = lastResult?.summary?.analysisId;
+      if (!analysisId) {
+        return;
+      }
+
+      replayButton.disabled = true;
+      replayStatus.textContent = 'Replay körs...';
+      replayStatus.classList.remove('error');
+
+      try {
+        const response = await fetch(`/api/log-analysis/archive/${encodeURIComponent(analysisId)}/replay`, {
+          method: 'POST'
+        });
+        const data = await readResponsePayload(response);
+        if (!response.ok) {
+          throw new Error(data?.message || 'Replay misslyckades.');
+        }
+        replayStatus.textContent = `Replay klar. Processerade ${data.processedCount}, hoppade över ${data.skippedCount}, fel ${data.failedCount}.`;
+      } catch (error) {
+        replayStatus.textContent = error.message;
+        replayStatus.classList.add('error');
+      } finally {
+        replayButton.disabled = false;
+      }
+    }
+
+    uploadForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const files = getSelectedFiles();
+      if (!files.length) {
+        setStatus('Välj en loggfil eller mapp först.', true);
+        return;
+      }
+
+      analyzeButton.disabled = true;
+      downloadScenarioButton.classList.add('hidden');
+      replayButton.classList.add('hidden');
+      setStatus(`Analyserar ${files.length} fil(er)...`);
+      setProgress({
+        phase: 'Startar',
+        counter: files.length > 1 ? `0 / ${files.length} filer` : '',
+        percent: files.length > 1 ? 0 : null,
+        detail: 'Analysen initieras...',
+        indeterminate: files.length === 1
+      });
+      updateProgressSteps('queued', false, false);
+
+      try {
+        let data;
+        if (files.length === 1) {
+          const job = await startAnalysisJob(files);
+          data = await pollJobUntilComplete(job.jobId);
+        } else {
+          data = await uploadFilesSequentially(files);
+        }
+
+        renderResult(data);
+        await refreshArchive();
+        setProgress({
+          phase: 'Klart',
+          counter: files.length > 1 ? `${files.length} / ${files.length} filer` : '',
+          percent: 100,
+          detail: `Analysen sparades som ${data.summary.analysisId || 'ny analys'}.`
+        });
+        updateProgressSteps('completed', false, true);
+        setStatus(`Klart. ${data.summary.replayableEvents} av ${data.summary.totalEvents} anrop kan replayas direkt.`);
+      } catch (error) {
+        setProgress({
+          phase: 'Fel',
+          counter: '',
+          percent: 100,
+          detail: error.message
+        });
+        updateProgressSteps(activeJobId ? 'saving' : 'queued', true, false);
+        setStatus(error.message, true);
+      } finally {
+        analyzeButton.disabled = false;
+      }
+    });
+
+    downloadScenarioButton.addEventListener('click', downloadScenario);
+    replayButton.addEventListener('click', replayCurrentAnalysis);
+    refreshArchiveButton.addEventListener('click', refreshArchive);
+    fileInput.addEventListener('change', () => setSelectedFiles(fileInput.files));
+    folderInput.addEventListener('change', () => setSelectedFiles(folderInput.files));
+    folderButton.addEventListener('click', () => folderInput.click());
+    resetProgress();
+    refreshArchive();
+  </script>
+</body>
+</html>
